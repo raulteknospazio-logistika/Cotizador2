@@ -1,0 +1,6 @@
+{
+  "name": "Teknospazio - Cotizador Express",
+  "description": "Sistema de generación de presupuestos y cotizaciones de recubrimientos y remodelación para Teknospazio.com",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

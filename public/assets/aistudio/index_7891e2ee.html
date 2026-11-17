@@ -1,0 +1,2757 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teknospazio - Cotizador Express de Recubrimientos & Remodelación</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                            dark: '#0f172a',
+                            slate: '#1e293b'
+                        },
+                        accent: {
+                            orange: '#f97316',
+                            amber: '#f59e0b'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .custom-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .budget-benefit-card { break-inside: avoid; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1); }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+            .print-container { shadow: none !important; border: none !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
+            .budget-benefit-card { box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12) !important; border: 1px solid #e5e7eb !important; }
+        }
+        #photoViewerImage { transform: scale(var(--photo-viewer-zoom, 1)); transform-origin: center; transition: transform 150ms ease; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between antialiased">
+
+    <!-- HEADER / NAVIGATION -->
+    <section id="authScreen" class="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+        <form id="loginForm" class="w-full max-w-md space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+            <img src="logo-Tekno-Spazio-blanco-png.png" alt="Tekno Spazio" class="mx-auto w-48 rounded-lg bg-slate-900 p-3">
+            <div class="text-center">
+                <h1 class="text-xl font-bold text-slate-900">Acceso al Cotizador</h1>
+                <p class="mt-1 text-sm text-slate-500">Inicia sesión con tu correo y contraseña.</p>
+            </div>
+            <div>
+                <label for="loginEmail" class="mb-1 block text-xs font-semibold text-slate-600">Correo electrónico</label>
+                <input id="loginEmail" type="email" autocomplete="username" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+            <div>
+                <label for="loginPassword" class="mb-1 block text-xs font-semibold text-slate-600">Contraseña</label>
+                <input id="loginPassword" type="password" autocomplete="current-password" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+            <p id="loginError" class="hidden text-sm text-red-600" role="alert"></p>
+            <p id="loginNotice" class="hidden text-sm text-green-700" role="status"></p>
+            <button id="loginSubmit" type="submit" class="w-full rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white hover:bg-brand-800">Iniciar sesión</button>
+            <p class="text-center text-sm text-slate-500">¿Aún no tienes cuenta?
+                <button id="showSignupButton" type="button" class="font-semibold text-brand-700 hover:underline">Crear cuenta</button>
+            </p>
+        </form>
+
+        <form id="signupForm" class="hidden w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+            <img src="logo-Tekno-Spazio-blanco-png.png" alt="Tekno Spazio" class="mx-auto w-48 rounded-lg bg-slate-900 p-3">
+            <div class="text-center">
+                <h1 class="text-xl font-bold text-slate-900">Crear cuenta</h1>
+                <p class="mt-1 text-sm text-slate-500">Confirma tu correo para acceder al cotizador.</p>
+            </div>
+            <div>
+                <label for="signupName" class="mb-1 block text-xs font-semibold text-slate-600">Nombre completo</label>
+                <input id="signupName" type="text" maxlength="100" autocomplete="name" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+            <div>
+                <label for="signupEmail" class="mb-1 block text-xs font-semibold text-slate-600">Correo electrónico</label>
+                <input id="signupEmail" type="email" autocomplete="email" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+            <div>
+                <label for="signupPassword" class="mb-1 block text-xs font-semibold text-slate-600">Contraseña (mínimo 8 caracteres)</label>
+                <input id="signupPassword" type="password" minlength="8" autocomplete="new-password" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+            <div>
+                <label for="signupRole" class="mb-1 block text-xs font-semibold text-slate-600">Tipo de usuario</label>
+                <select id="signupRole" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <option value="seller">Vendedor</option>
+                    <option value="technician">Técnico</option>
+                </select>
+            </div>
+            <div id="signupStoreField">
+                <label for="signupStore" class="mb-1 block text-xs font-semibold text-slate-600">Tienda</label>
+                <select id="signupStore" required class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <option value="">Selecciona tu tienda</option>
+                    <option value="Tekno Cuajimalpa">Tekno Cuajimalpa</option>
+                    <option value="Tekno Metepec">Tekno Metepec</option>
+                    <option value="Tekno León">Tekno León</option>
+                    <option value="Ferrekasa">Ferrekasa</option>
+                </select>
+            </div>
+            <p id="signupError" class="hidden text-sm text-red-600" role="alert"></p>
+            <button id="signupSubmit" type="submit" class="w-full rounded-xl bg-brand-700 px-4 py-3 text-sm font-bold text-white hover:bg-brand-800">Crear cuenta</button>
+            <p class="text-center text-sm text-slate-500">¿Ya tienes cuenta?
+                <button id="showLoginButton" type="button" class="font-semibold text-brand-700 hover:underline">Iniciar sesión</button>
+            </p>
+        </form>
+    </section>
+
+    <header id="appHeader" class="hidden bg-brand-dark text-white shadow-lg sticky top-0 z-40 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-col sm:flex-row sm:flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3 self-start sm:self-auto">
+                <img src="logo-Tekno-Spazio-blanco-png.png" alt="Tekno Spazio Diseño Interior" class="w-40 sm:w-48 h-auto object-contain">
+            </div>
+
+            <nav aria-label="Navegación principal" class="flex items-center gap-1 w-full sm:w-auto overflow-x-auto custom-scroll">
+                <button id="tab-btn-cliente" onclick="switchTab('cliente')" aria-controls="tab-cliente" aria-selected="true" class="flex-1 sm:flex-none px-1.5 sm:px-3 py-2 text-[11px] sm:text-sm font-semibold rounded-lg bg-brand-600 text-white whitespace-nowrap transition">
+                    <i class="fa-solid fa-user hidden sm:inline mr-1"></i> 1. Cliente
+                </button>
+                <button id="tab-btn-cotiz" onclick="switchTab('cotizador')" aria-controls="tab-cotizador" aria-selected="false" class="flex-1 sm:flex-none px-1.5 sm:px-3 py-2 text-[11px] sm:text-sm font-semibold rounded-lg text-slate-300 hover:bg-slate-800 whitespace-nowrap transition">
+                    <i class="fa-solid fa-calculator hidden sm:inline mr-1"></i> 2. Cotización
+                </button>
+                <button id="tab-btn-preview" onclick="switchTab('presupuesto')" aria-controls="tab-presupuesto" aria-selected="false" class="flex-1 sm:flex-none px-1.5 sm:px-3 py-2 text-[11px] sm:text-sm font-semibold rounded-lg text-slate-300 hover:bg-slate-800 whitespace-nowrap transition">
+                    <i class="fa-solid fa-file-invoice-dollar hidden sm:inline mr-1"></i> 3. Presupuesto
+                </button>
+                <span id="signedInUser" class="hidden sm:inline max-w-36 truncate px-2 text-[11px] text-slate-300"></span>
+                <button onclick="signOut()" aria-label="Cerrar sesión" class="shrink-0 px-2 py-1.5 text-xs text-slate-400 hover:text-red-400 transition" title="Cerrar sesión">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main id="appMain" class="hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+        <!-- ALERTS & NOTIFICATIONS CONTAINER -->
+        <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+        <section id="quoteDashboard" class="mb-6 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm no-print">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 id="dashboardTitle" class="text-lg font-bold text-slate-800">Solicitudes de cotización</h2>
+                    <p id="dashboardDescription" class="text-xs text-slate-500"></p>
+                </div>
+                <button id="newQuoteButton" type="button" onclick="startNewQuote()" class="hidden rounded-lg bg-brand-700 px-4 py-2 text-xs font-bold text-white hover:bg-brand-800">
+                    <i class="fa-solid fa-plus mr-1"></i>Nueva solicitud
+                </button>
+            </div>
+            <div id="technicianSearch" class="hidden flex flex-wrap gap-2">
+                <input id="folioSearch" type="search" placeholder="Buscar por folio, ej. TK-2026-001" class="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                <button type="button" onclick="searchQuoteByFolio()" class="rounded-lg bg-slate-800 px-4 py-2 text-xs font-bold text-white">Buscar folio</button>
+            </div>
+            <div id="quotesList" class="max-h-80 space-y-1 overflow-y-auto pr-1">
+                <p class="text-sm text-slate-500">Cargando solicitudes...</p>
+            </div>
+        </section>
+
+        <section id="quoteWorkflowBar" class="mb-5 hidden flex-wrap items-center justify-between gap-3 rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm no-print">
+            <div>
+                <span class="font-semibold text-slate-600">Folio:</span>
+                <span id="activeQuoteFolio" class="font-bold text-brand-800"></span>
+                <span id="activeQuoteStatus" class="ml-2 rounded-full bg-white px-2 py-1 text-xs font-semibold text-slate-600"></span>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button id="saveRequestButton" type="button" onclick="submitQuoteRequest()" class="hidden rounded-lg bg-brand-700 px-3 py-2 text-xs font-bold text-white">Enviar solicitud y generar folio</button>
+                <button id="assignTechnicianButton" type="button" onclick="assignQuoteTechnician()" class="hidden rounded-lg bg-indigo-700 px-3 py-2 text-xs font-bold text-white">Asignar técnico</button>
+                <button id="techSaveButton" type="button" onclick="saveTechnicianQuote(false)" class="hidden rounded-lg bg-slate-700 px-3 py-2 text-xs font-bold text-white">Guardar avances</button>
+                <button id="techCompleteButton" type="button" onclick="saveTechnicianQuote(true)" class="hidden rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white">Lista para revisión</button>
+                <button id="sellerSentButton" type="button" onclick="setSellerQuoteStatus('sent')" class="hidden rounded-lg bg-brand-700 px-3 py-2 text-xs font-bold text-white">Marcar como enviada</button>
+                <button id="sellerAcceptedButton" type="button" onclick="setSellerQuoteStatus('accepted')" class="hidden rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white">Aceptada</button>
+                <button id="sellerRejectedButton" type="button" onclick="setSellerQuoteStatus('rejected')" class="hidden rounded-lg bg-slate-600 px-3 py-2 text-xs font-bold text-white">No aceptada</button>
+                <button type="button" onclick="returnToQuoteList()" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">Volver a solicitudes</button>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 1: CLIENTE -->
+        <!-- ========================================== -->
+        <div id="tab-cliente" class="tab-content space-y-6">
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-store text-brand-600"></i> Tienda que Solicita
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                                                <label for="clientStore" class="block text-xs font-semibold text-slate-600 mb-1">Tienda</label>
+                        <select id="clientStore" aria-label="Tienda que solicita la cotización" onchange="updateState()" class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                            <option value="">Selecciona una tienda</option>
+                            <option value="Tekno Cuajimalpa">Tekno Cuajimalpa</option>
+                            <option value="Tekno Metepec">Tekno Metepec</option>
+                            <option value="Tekno León">Tekno León</option>
+                            <option value="Ferrekasa">Ferrekasa</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="sellerName" class="block text-xs font-semibold text-slate-600 mb-1">Nombre del vendedor</label>
+                        <input type="text" id="sellerName" oninput="updateState()" placeholder="Nombre de quien solicita la cotización" class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                    </div>
+                    <div>
+                        <div id="technicianDisplayField">
+                            <span class="block text-xs font-semibold text-slate-600 mb-1">Técnico asignado</span>
+                            <p id="technicianDisplay" class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl">Pendiente de asignación</p>
+                        </div>
+                        <div id="technicianSelectField" class="hidden">
+                            <label for="technicianName" class="block text-xs font-semibold text-slate-600 mb-1">Asignar técnico</label>
+                            <select id="technicianName" aria-label="Asignar técnico" class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                                <option value="">Selecciona un técnico</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="my-5 border-t border-slate-200"></div>
+
+                <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-user-gear text-brand-600"></i> Información del Cliente y Proyecto
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nombre del Cliente / Empresa</label>
+                        <input type="text" id="clientName" oninput="updateState()" placeholder="Nombre del cliente o empresa" class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Teléfono / WhatsApp</label>
+                        <input type="text" id="clientPhone" oninput="updateState()" placeholder="Ej. 55 1234 5678" class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Ubicación / Dirección de la Obra</label>
+                        <input type="text" id="projectAddress" oninput="updateState()" placeholder="Ej. Calle Juárez 123, León, Guanajuato" class="w-full text-sm px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:bg-white transition">
+                    </div>
+                </div>
+                <div class="flex justify-end mt-5">
+                    <button onclick="switchTab('cotizador')" class="px-5 py-2.5 bg-brand-dark hover:bg-slate-800 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition">
+                        Continuar a Cotización <i class="fa-solid fa-arrow-right text-teal-400"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: COTIZACIÓN -->
+        <!-- ========================================== -->
+        <div id="tab-cotizador" class="tab-content hidden space-y-6">
+            <!-- SECTION: ESTANCIAS Y ZONAS DEL PROYECTO -->
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-800">Áreas a Recubrir</h2>
+                        <p class="text-xs text-slate-500">Define cada área, sus dimensiones, merma y materiales.</p>
+                    </div>
+                    <button onclick="addRoom()" class="px-4 py-2 bg-brand-dark hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition">
+                        <i class="fa-solid fa-plus text-teal-400"></i> Agregar Área
+                    </button>
+                </div>
+
+                <div id="roomTabs" class="no-print flex gap-2 overflow-x-auto custom-scroll border-b border-slate-200" role="tablist" aria-label="Áreas del proyecto"></div>
+                <div id="roomsContainer">
+                    <!-- Contenido del área activa -->
+                </div>
+            </div>
+
+            <!-- SECTION: BARRA FLOTANTE DE RESUMEN DE COTIZACIÓN -->
+            <div class="bg-gradient-to-r from-brand-dark via-slate-900 to-brand-slate text-white p-5 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="space-y-1 text-center md:text-left">
+                    <span class="text-xs font-semibold text-teal-400 uppercase tracking-widest">Resumen General de la Cotización</span>
+                    <div class="flex flex-wrap items-baseline gap-x-4 gap-y-1 justify-center md:justify-start">
+                        <div class="text-2xl font-black text-white" id="summaryTotalMXN">$0.00 MXN</div>
+                        <div class="text-xs text-slate-300">
+                            Subtotal: <span id="summarySubtotalMXN" class="font-semibold text-white">$0.00</span> | Importes con IVA incluido
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <button onclick="switchTab('presupuesto')" class="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-bold rounded-xl shadow-lg shadow-teal-900/40 text-sm flex items-center justify-center gap-2 transition transform active:scale-95">
+                        <i class="fa-solid fa-file-pdf"></i> Generar Presupuesto
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: PRESUPUESTO FORMAL Y EXPORTACIÓN -->
+        <!-- ========================================== -->
+        <div id="tab-presupuesto" class="tab-content hidden space-y-6">
+
+            <div class="no-print flex flex-wrap justify-between items-center gap-4 bg-slate-800 text-white p-4 rounded-2xl shadow-md">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+                    <span class="text-xs font-medium">Presupuesto generado y listo para presentar al cliente.</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="printPresupuesto()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow flex items-center gap-2 transition">
+                        <i class="fa-solid fa-print"></i> Imprimir / PDF
+                    </button>
+                    <button onclick="copyWhatsAppSummary()" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl text-xs font-bold shadow flex items-center gap-2 transition">
+                        <i class="fa-brands fa-whatsapp text-sm"></i> Copiar a WhatsApp
+                    </button>
+                </div>
+            </div>
+
+            <!-- HOJA FORMAL DE PRESUPUESTO -->
+            <div id="printSheet" class="bg-white p-8 md:p-12 rounded-2xl shadow-xl border border-slate-200 print-container max-w-4xl mx-auto space-y-8 text-slate-800">
+                
+                <!-- HEADER PRESUPUESTO -->
+                <div class="flex justify-between items-start border-b border-slate-200 pb-6">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-2xl font-black tracking-tight text-slate-900">Teknospazio</span>
+                        </div>
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Recubrimientos & Diseño de Espacios</p>
+                        <p class="text-xs text-slate-400 mt-1">RFC: TEK-080912-K32 | Ventas y Proyectos Especiales</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="inline-block bg-brand-50 text-brand-700 font-bold px-3 py-1 rounded-full text-xs mb-2 border border-brand-200">
+                            PRESUPUESTO
+                        </span>
+                        <div class="text-xs text-slate-500">Folio: <span id="outFolio" class="font-bold text-slate-800">TK-2026-001</span></div>
+                        <div class="text-xs text-slate-500">Fecha: <span id="outDate" class="font-medium text-slate-800">27/10/2026</span></div>
+                        <div class="text-xs text-slate-500">Vigencia: <span class="font-medium text-slate-800">15 días naturales</span></div>
+                    </div>
+                </div>
+
+                <!-- CLIENTE Y OBRA -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs">
+                    <div>
+                        <span class="font-bold text-slate-400 uppercase tracking-wider block mb-1">Cliente / Atención a:</span>
+                        <div id="outClientName" class="font-bold text-slate-800 text-sm">Cliente General</div>
+                        <div id="outClientPhone" class="text-slate-500">Tel: -</div>
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-400 uppercase tracking-wider block mb-1">Ubicación de la Obra:</span>
+                        <div id="outProjectAddress" class="font-medium text-slate-800">Dirección no especificada</div>
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-400 uppercase tracking-wider block mb-1">Tienda solicitante:</span>
+                        <div id="outClientStore" class="font-medium text-slate-800">No especificada</div>
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-400 uppercase tracking-wider block mb-1">Vendedor:</span>
+                        <div id="outSellerName" class="font-medium text-slate-800">No especificado</div>
+                    </div>
+                    <div>
+                        <span class="font-bold text-slate-400 uppercase tracking-wider block mb-1">Técnico:</span>
+                        <div id="outTechnicianName" class="font-medium text-slate-800">No asignado</div>
+                    </div>
+                </div>
+
+                <!-- TABLA DE DESGLOSE POR ÁREAS -->
+                <div id="outBreakdownContainer" class="space-y-6">
+                    <!-- Fills with room tables -->
+                </div>
+
+                <!-- TOTALES FINAL -->
+                <div class="flex justify-end pt-4 border-t border-slate-200">
+                    <div class="w-full sm:w-72 space-y-2 text-xs">
+                        <div class="flex justify-between text-slate-600">
+                            <span>Subtotal (descuentos por material aplicados):</span>
+                            <span id="outSubtotal" class="font-semibold">$0.00 MXN</span>
+                        </div>
+                        <div class="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-300">
+                            <span>TOTAL (IVA INCLUIDO):</span>
+                            <span id="outTotal" class="text-brand-700">$0.00 MXN</span>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="space-y-5 border-t border-slate-200 pt-7">
+                    <div class="text-center">
+                        <h2 class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">¿Por qué elegir Teknospazio para sus recubrimientos?</h2>
+                        <div class="mx-auto mt-3 h-1 w-16 rounded-full bg-amber-600"></div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+                        <article class="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-4 text-center shadow-md transition-shadow hover:shadow-lg lg:col-span-2">
+                            <div class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-sm">
+                                <i class="fa-solid fa-award"></i>
+                            </div>
+                            <h3 class="mb-1 text-xs font-bold tracking-wide text-slate-900">PROFESIONALES CAPACITADOS</h3>
+                            <p class="text-[11px] leading-relaxed text-slate-600">Personal técnico capacitado para realizar la instalación con atención al detalle y control de calidad.</p>
+                        </article>
+                        <article class="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-4 text-center shadow-md transition-shadow hover:shadow-lg lg:col-span-2">
+                            <div class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-sm">
+                                <i class="fa-regular fa-calendar-check"></i>
+                            </div>
+                            <h3 class="mb-1 text-xs font-bold tracking-wide text-slate-900">PLANEACIÓN DE OBRA</h3>
+                            <p class="text-[11px] leading-relaxed text-slate-600">Definimos tiempos y horario de trabajo para organizar el proyecto desde el inicio.</p>
+                        </article>
+                        <article class="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-4 text-center shadow-md transition-shadow hover:shadow-lg lg:col-span-2">
+                            <div class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-sm">
+                                <i class="fa-solid fa-scale-balanced"></i>
+                            </div>
+                            <h3 class="mb-1 text-xs font-bold tracking-wide text-slate-900">VALOR PARA SU INVERSIÓN</h3>
+                            <p class="text-[11px] leading-relaxed text-slate-600">Una propuesta clara con materiales y cantidades definidos para ayudarle a decidir con confianza.</p>
+                        </article>
+                        <article class="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-4 text-center shadow-md transition-shadow hover:shadow-lg sm:col-span-2 lg:col-span-2 lg:col-start-2">
+                            <div class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-sm">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <h3 class="mb-1 text-xs font-bold tracking-wide text-slate-900">GARANTÍA Y ACOMPAÑAMIENTO</h3>
+                            <p class="text-[11px] leading-relaxed text-slate-600">Consulte con su asesor la cobertura aplicable a los materiales y trabajos incluidos en este presupuesto.</p>
+                        </article>
+                        <article class="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-4 text-center shadow-md transition-shadow hover:shadow-lg sm:col-span-2 lg:col-span-2 lg:col-start-4">
+                            <div class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-sm">
+                                <i class="fa-solid fa-palette"></i>
+                            </div>
+                            <h3 class="mb-1 text-xs font-bold tracking-wide text-slate-900">ASESORÍA EN DISEÑO</h3>
+                            <p class="text-[11px] leading-relaxed text-slate-600">Le apoyamos a elegir texturas y colores que armonicen con su espacio y el estilo que busca.</p>
+                        </article>
+                    </div>
+                    <div class="border-t border-amber-100 pt-4 text-center">
+                        <p class="text-xs font-semibold text-slate-800">Una marca de confianza en recubrimientos arquitectónicos.</p>
+                        <div class="mt-2 flex flex-wrap justify-center gap-x-5 gap-y-1 text-[11px] text-slate-500">
+                            <span><i class="fa-solid fa-globe mr-1 text-amber-700"></i>teknospazio.com</span>
+                            <span><i class="fa-solid fa-envelope mr-1 text-amber-700"></i>info@teknospazio.com</span>
+                            <span><i class="fa-solid fa-phone mr-1 text-amber-700"></i>(318) 755-7831</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- NOTAS Y CONDICIONES -->
+                <div class="border-t border-slate-200 pt-6 text-[11px] text-slate-400 space-y-1">
+                    <p class="font-bold text-slate-600 uppercase">Términos y Condiciones:</p>
+                    <p>• Todos los montos de esta cotización ya incluyen IVA; no se agrega un importe adicional por este concepto.</p>
+                    <p>• Los importes consideran las cantidades calculadas con el rendimiento y la merma indicados en cada área.</p>
+                    <p>• La preparación de la superficie para colocación requiere estar a nivel y plomo previo al inicio de los trabajos.</p>
+                    <p>• Cotización generada mediante el Cotizador Express Teknospazio en MXN.</p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <div id="photoViewerModal" class="no-print fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/95 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="photoViewerTitle" tabindex="-1">
+        <div class="flex h-full w-full max-w-7xl flex-col">
+            <div class="flex items-center justify-between gap-3 py-2 text-white">
+                <div class="min-w-0">
+                    <h2 id="photoViewerTitle" class="truncate text-sm font-bold sm:text-base">Foto del área</h2>
+                    <p id="photoViewerCounter" class="text-xs text-slate-300"></p>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                    <button id="photoViewerDownload" type="button" onclick="downloadCurrentAreaPhoto()" class="hidden rounded-lg bg-white/10 px-3 py-2 text-xs font-semibold text-white hover:bg-white/20" aria-label="Descargar foto del área">
+                        <i class="fa-solid fa-download mr-1"></i><span class="hidden sm:inline">Descargar</span>
+                    </button>
+                    <button type="button" onclick="zoomPhoto(-0.25)" class="rounded-lg bg-white/10 px-3 py-2 text-white hover:bg-white/20" aria-label="Reducir zoom">−</button>
+                    <button type="button" onclick="resetPhotoZoom()" class="min-w-12 rounded-lg bg-white/10 px-2 py-2 text-xs font-semibold text-white hover:bg-white/20" aria-label="Restablecer zoom"><span id="photoViewerZoomLabel">100%</span></button>
+                    <button type="button" onclick="zoomPhoto(0.25)" class="rounded-lg bg-white/10 px-3 py-2 text-white hover:bg-white/20" aria-label="Aumentar zoom">+</button>
+                    <button id="photoViewerClose" type="button" onclick="closePhotoViewer()" class="ml-1 rounded-lg bg-white/10 px-3 py-2 text-white hover:bg-red-600" aria-label="Cerrar visor">×</button>
+                </div>
+            </div>
+            <div class="relative flex min-h-0 flex-1 items-center justify-center overflow-auto">
+                <button id="photoViewerPrevious" type="button" onclick="stepPhotoViewer(-1)" class="absolute left-1 z-10 rounded-full bg-black/50 px-4 py-3 text-2xl text-white hover:bg-black/75" aria-label="Foto anterior">‹</button>
+                <img id="photoViewerImage" alt="" class="max-h-[78vh] max-w-[88vw] select-none object-contain" draggable="false">
+                <button id="photoViewerNext" type="button" onclick="stepPhotoViewer(1)" class="absolute right-1 z-10 rounded-full bg-black/50 px-4 py-3 text-2xl text-white hover:bg-black/75" aria-label="Foto siguiente">›</button>
+            </div>
+            <p class="py-2 text-center text-[11px] text-slate-300">Usa + / − para acercar o alejar. También puedes usar las flechas del teclado para cambiar de foto.</p>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-4 text-center border-t border-slate-800 no-print">
+        <div class="max-w-7xl mx-auto px-4">
+            Teknospazio México © 2026 | Sistema Express de Cotizaciones para Remodelación y Recubrimientos
+        </div>
+    </footer>
+
+    <!-- APPLICATION LOGIC (JAVASCRIPT) -->
+    <script>
+        const SUPABASE_URL = 'https://bvlqpwtocreqiatuhiij.supabase.co';
+        const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_0S1mERZ7rWg2cskW7TDTfg_by48wUTy';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+        let currentUser = null;
+        let currentProfile = null;
+        let currentQuote = null;
+        let quoteSaveTimer = null;
+        let suspendDraftSave = false;
+        let technicianProfiles = [];
+        const roomPhotosCache = new Map();
+        const quoteStatuses = {
+            requested: 'Solicitud nueva',
+            in_progress: 'En cotización',
+            ready_for_review: 'Lista para revisión',
+            sent: 'Enviada al cliente',
+            accepted: 'Aceptada',
+            rejected: 'No aceptada'
+        };
+        let appState = {
+            client: { name: '', phone: '', address: '' },
+            activeRoomId: null,
+            rooms: []
+        };
+        let photosDatabasePromise = null;
+        const roomPhotoUrls = new Map();
+        let photoViewerState = null;
+        let photoViewerReturnFocus = null;
+
+        // ==========================================
+        // ROOM / ESTANCIA MANAGEMENT
+        // ==========================================
+        function addRoom(defaultName = null) {
+            const roomId = 'room_' + Date.now();
+            const tiles = appState.catalog.filter(i => !['Adhesivos', 'Boquillas', 'Mano de Obra'].includes(i.category));
+            const defaultTileId = tiles.length > 0 ? tiles[0].id : (appState.catalog[0]?.id || '');
+            const moList = appState.catalog.filter(i => i.category === 'Mano de Obra');
+            const defaultMoId = moList.length > 0 ? moList[0].id : '';
+
+            const newRoom = {
+                id: roomId,
+                name: defaultName || `Estancia ${appState.rooms.length + 1}`,
+                length: 4.0,
+                width: 3.0,
+                directArea: 0,
+                useDirectArea: false,
+                tileId: defaultTileId,
+                wastePct: 10, // 10% desperdicio
+                includeLabor: true,
+                laborId: defaultMoId,
+                customAdhesiveId: appState.globalAdhesiveId,
+                customGroutId: appState.globalGroutId
+            };
+
+            appState.rooms.push(newRoom);
+            updateState();
+        }
+
+        function removeRoom(roomId) {
+            if (appState.rooms.length <= 1) {
+                showToast("Debes tener al menos una estancia en el proyecto.", "warning");
+                return;
+            }
+            appState.rooms = appState.rooms.filter(r => r.id !== roomId);
+            updateState();
+        }
+
+        function updateRoomField(roomId, field, value) {
+            const room = appState.rooms.find(r => r.id === roomId);
+            if (!room) return;
+
+            if (field === 'length' || field === 'width' || field === 'directArea' || field === 'wastePct') {
+                room[field] = parseFloat(value) || 0;
+            } else if (field === 'includeLabor' || field === 'useDirectArea') {
+                room[field] = Boolean(value);
+            } else {
+                room[field] = value;
+            }
+            updateState();
+        }
+
+        // RENDER ROOM CARDS
+        function renderRooms() {
+            const container = document.getElementById('roomsContainer');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            appState.rooms.forEach((room, index) => {
+                const areaNet = room.useDirectArea ? room.directArea : (room.length * room.width);
+                const areaGross = areaNet * (1 + (room.wastePct / 100));
+
+                // Selected items
+                const tileObj = appState.catalog.find(i => i.id === room.tileId) || { price: 0, name: 'No seleccionado' };
+                const laborObj = appState.catalog.find(i => i.id === room.laborId) || { price: 0, name: 'Mano de Obra Estándar' };
+                const adhesiveObj = appState.catalog.find(i => i.id === (room.customAdhesiveId || appState.globalAdhesiveId)) || { price: 0 };
+                const groutObj = appState.catalog.find(i => i.id === (room.customGroutId || appState.globalGroutId)) || { price: 0 };
+
+                // Calculations
+                const tileCost = areaGross * tileObj.price;
+                const laborCost = room.includeLabor ? (areaNet * laborObj.price) : 0;
+                
+                // Secondary Insumos: 1 saco pegamento / 4 m2; 1 boquilla / 15 m2
+                const adhesiveSacks = Math.ceil(areaGross / 4);
+                const groutSacks = Math.ceil(areaGross / 15);
+                const adhesiveCost = adhesiveSacks * adhesiveObj.price;
+                const groutCost = groutSacks * groutObj.price;
+
+                const roomSubtotalCost = tileCost + laborCost + adhesiveCost + groutCost;
+
+                // Options for tile select
+                const tileOptionsHtml = appState.catalog
+                    .map(item => `<option value="${item.id}" ${item.id === room.tileId ? 'selected' : ''}>${item.name} ($${item.price.toFixed(2)} / ${item.unit})</option>`)
+                    .join('');
+
+                // Options for labor select
+                const moOptionsHtml = appState.catalog
+                    .filter(i => i.category === 'Mano de Obra')
+                    .map(item => `<option value="${item.id}" ${item.id === room.laborId ? 'selected' : ''}>${item.name} ($${item.price.toFixed(2)}/m²)</option>`)
+                    .join('');
+
+                const cardHtml = `
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 transition hover:border-slate-300 relative space-y-4">
+                        <!-- HEADER ESTANCIA -->
+                        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-brand-50 text-brand-700 font-bold px-2.5 py-1 rounded-lg text-xs">#${index + 1}</span>
+                                <input type="text" value="${escapeHtml(room.name)}" onchange="updateRoomField('${room.id}', 'name', this.value)" class="font-bold text-slate-800 text-base bg-transparent hover:bg-slate-50 focus:bg-white px-2 py-1 rounded-lg border border-transparent focus:border-slate-300 focus:outline-none transition" placeholder="Nombre de Estancia">
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <span class="text-xs font-bold text-slate-500">Subtotal Obra: <span class="text-brand-700 text-sm">$${formatMXN(roomSubtotalCost)}</span></span>
+                                <button onclick="removeRoom('${room.id}')" class="text-slate-400 hover:text-red-500 p-1 transition" title="Eliminar Estancia">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- MEDIDAS Y ÁREA -->
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50/70 p-3 rounded-xl border border-slate-100">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Largo (m)</label>
+                                <input type="number" step="0.1" value="${room.length}" oninput="updateRoomField('${room.id}', 'length', this.value)" class="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Ancho (m)</label>
+                                <input type="number" step="0.1" value="${room.width}" oninput="updateRoomField('${room.id}', 'width', this.value)" class="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-500">
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-500 mb-1">Factor Merma (%)</label>
+                                <select onchange="updateRoomField('${room.id}', 'wastePct', this.value)" class="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-brand-500">
+                                    <option value="5" ${room.wastePct === 5 ? 'selected' : ''}>5% (Corte recto)</option>
+                                    <option value="10" ${room.wastePct === 10 ? 'selected' : ''}>10% (Estándar)</option>
+                                    <option value="15" ${room.wastePct === 15 ? 'selected' : ''}>15% (Diagonal / Mosaico)</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col justify-center">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Área Calculada</span>
+                                <div class="text-xs font-bold text-slate-800">
+                                    Neto: <span class="text-brand-600">${areaNet.toFixed(2)} m²</span> | +Merma: <span class="text-teal-700">${areaGross.toFixed(2)} m²</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SELECCIÓN DE RECUBRIMIENTO PRINCIPAL -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label class="block text-xs font-semibold text-slate-600 mb-1">Recubrimiento / Piso / Azulejo Principal</label>
+                                <select onchange="updateRoomField('${room.id}', 'tileId', this.value)" class="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium">
+                                    ${tileOptionsHtml}
+                                </select>
+                            </div>
+                            <div class="flex items-center justify-between bg-slate-50 px-3 py-2 rounded-xl border border-slate-100">
+                                <span class="text-xs font-semibold text-slate-600">Incluir Mano de Obra</span>
+                                <input type="checkbox" ${room.includeLabor ? 'checked' : ''} onchange="updateRoomField('${room.id}', 'includeLabor', this.checked)" class="w-4 h-4 accent-brand-600 rounded cursor-pointer">
+                            </div>
+                        </div>
+
+                        ${room.includeLabor ? `
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs bg-teal-50/40 p-3 rounded-xl border border-teal-100">
+                            <div>
+                                <label class="block font-semibold text-slate-600 mb-1">Tarifa de Mano de Obra</label>
+                                <select onchange="updateRoomField('${room.id}', 'laborId', this.value)" class="w-full p-2 bg-white border border-slate-200 rounded-lg">
+                                    ${moOptionsHtml}
+                                </select>
+                            </div>
+                            <div class="flex items-center text-slate-500 font-medium pt-3">
+                                Total Colocación: <span class="font-bold text-slate-800 ml-1">$${formatMXN(laborCost)}</span>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- RESUMEN AUTOMÁTICO DE INSUMOS DE ESTA ESTANCIA -->
+                        <div class="bg-slate-50 rounded-xl p-3 text-xs text-slate-600 flex flex-wrap justify-between items-center gap-2 border border-slate-100">
+                            <div class="flex flex-wrap items-center gap-4">
+                                <span class="font-semibold text-slate-700"><i class="fa-solid fa-cubes text-slate-400 mr-1"></i> Insumos sugeridos:</span>
+                                <span>Adhesivo: <b>${adhesiveSacks} sacos</b> ($${formatMXN(adhesiveCost)})</span>
+                                <span>Boquilla: <b>${groutSacks} bultos</b> ($${formatMXN(groutCost)})</span>
+                            </div>
+                            <span class="text-[11px] text-slate-400">Calculado automáticamente según m²</span>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', cardHtml);
+            });
+        }
+
+        // ==========================================
+        // UPDATE GLOBAL STATE & CALCULATIONS
+        // ==========================================
+        function updateState() {
+            // Read inputs
+            appState.client.name = document.getElementById('clientName')?.value || '';
+            appState.client.phone = document.getElementById('clientPhone')?.value || '';
+            appState.client.address = document.getElementById('projectAddress')?.value || '';
+            
+            appState.profitMargin = parseFloat(document.getElementById('profitMarginInput')?.value || 25);
+            // Update UI elements
+            document.getElementById('marginLabelVal').innerText = appState.profitMargin + '%';
+            document.getElementById('catalogBadgeCount').innerText = `Catálogo (${appState.catalog.length})`;
+
+            // Hide/Show Empty Banner
+            const emptyBanner = document.getElementById('emptyCatalogBanner');
+            if (emptyBanner) {
+                if (appState.catalog.length === 0) emptyBanner.classList.remove('hidden');
+                else emptyBanner.classList.add('hidden');
+            }
+
+            renderRooms();
+            renderGlobalInsumosSelects();
+            calculateTotals();
+            saveToLocalStorage();
+        }
+
+        function calculateTotals() {
+            let totalMaterialCostNoMargin = 0;
+
+            appState.rooms.forEach(room => {
+                const areaNet = room.useDirectArea ? room.directArea : (room.length * room.width);
+                const areaGross = areaNet * (1 + (room.wastePct / 100));
+
+                const tileObj = appState.catalog.find(i => i.id === room.tileId) || { price: 0 };
+                const laborObj = appState.catalog.find(i => i.id === room.laborId) || { price: 0 };
+                const adhesiveObj = appState.catalog.find(i => i.id === (room.customAdhesiveId || appState.globalAdhesiveId)) || { price: 0 };
+                const groutObj = appState.catalog.find(i => i.id === (room.customGroutId || appState.globalGroutId)) || { price: 0 };
+
+                const tileCost = areaGross * tileObj.price;
+                const laborCost = room.includeLabor ? (areaNet * laborObj.price) : 0;
+                
+                const adhesiveSacks = Math.ceil(areaGross / 4);
+                const groutSacks = Math.ceil(areaGross / 15);
+                const adhesiveCost = adhesiveSacks * adhesiveObj.price;
+                const groutCost = groutSacks * groutObj.price;
+
+                totalMaterialCostNoMargin += (tileCost + laborCost + adhesiveCost + groutCost);
+            });
+
+            // Apply Margin & Discount
+            const marginFactor = 1 + (appState.profitMargin / 100);
+            let subtotalWithMargin = totalMaterialCostNoMargin * marginFactor;
+
+            const totalWithIva = subtotalWithMargin;
+
+            // Render on floating summary bar
+            document.getElementById('summarySubtotalMXN').innerText = '$' + formatMXN(subtotalWithMargin);
+            document.getElementById('summaryTotalMXN').innerText = '$' + formatMXN(totalWithIva) + ' MXN';
+
+            return {
+                baseCost: totalMaterialCostNoMargin,
+                subtotal: subtotalWithMargin,
+                iva: 0,
+                total: totalWithIva
+            };
+        }
+
+        function renderGlobalInsumosSelects() {
+            const adhesives = appState.catalog.filter(i => i.category.toLowerCase().includes('adhesiv') || i.name.toLowerCase().includes('pega'));
+            const grouts = appState.catalog.filter(i => i.category.toLowerCase().includes('boquill') || i.name.toLowerCase().includes('junt'));
+
+            const adhesiveSelect = document.getElementById('globalAdhesiveSelect');
+            const groutSelect = document.getElementById('globalGroutSelect');
+
+            if (adhesiveSelect) {
+                adhesiveSelect.innerHTML = adhesives.map(i => `<option value="${i.id}" ${i.id === appState.globalAdhesiveId ? 'selected' : ''}>${i.name} ($${i.price.toFixed(2)})</option>`).join('');
+            }
+            if (groutSelect) {
+                groutSelect.innerHTML = grouts.map(i => `<option value="${i.id}" ${i.id === appState.globalGroutId ? 'selected' : ''}>${i.name} ($${i.price.toFixed(2)})</option>`).join('');
+            }
+        }
+
+        function updateGlobalAdhesive() {
+            appState.globalAdhesiveId = document.getElementById('globalAdhesiveSelect').value;
+            updateState();
+        }
+
+        function updateGlobalGrout() {
+            appState.globalGroutId = document.getElementById('globalGroutSelect').value;
+            updateState();
+        }
+
+        // ==========================================
+        // MICROSIP EXCEL PARSER (SHEETJS)
+        // ==========================================
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const json = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    if (json.length < 2) {
+                        showToast("El archivo no contiene suficientes filas de datos.", "error");
+                        return;
+                    }
+
+                    // Simple column mapping attempt
+                    const parsedCatalog = [];
+                    // Header row
+                    const headers = json[0].map(h => String(h).toLowerCase());
+                    const codeIdx = headers.findIndex(h => h.includes('clave') || h.includes('codigo') || h.includes('id') || h.includes('articulo'));
+                    const nameIdx = headers.findIndex(h => h.includes('descrip') || h.includes('nombre') || h.includes('concepto'));
+                    const catIdx = headers.findIndex(h => h.includes('linea') || h.includes('categor') || h.includes('grupo'));
+                    const priceIdx = headers.findIndex(h => h.includes('precio') || h.includes('costo') || h.includes('lista') || h.includes('mxn'));
+                    const unitIdx = headers.findIndex(h => h.includes('unidad') || h.includes('um'));
+
+                    for (let i = 1; i < json.length; i++) {
+                        const row = json[i];
+                        if (!row || row.length === 0) continue;
+
+                        const name = row[nameIdx !== -1 ? nameIdx : 1] || 'Producto Sin Nombre';
+                        const price = parseFloat(row[priceIdx !== -1 ? priceIdx : 3]) || 0;
+                        if (!name || price === 0) continue;
+
+                        parsedCatalog.push({
+                            id: String(row[codeIdx !== -1 ? codeIdx : 0] || 'ART-' + i),
+                            name: String(name),
+                            category: String(row[catIdx !== -1 ? catIdx : 2] || 'Recubrimientos'),
+                            price: price,
+                            unit: String(row[unitIdx !== -1 ? unitIdx : 4] || 'm²')
+                        });
+                    }
+
+                    if (parsedCatalog.length > 0) {
+                        appState.catalog = parsedCatalog;
+                        initDefaultGlobalInsumos();
+                        updateState();
+                        showToast(`¡Éxito! Se importaron ${parsedCatalog.length} productos de Microsip.`, "success");
+                        switchTab('cotizador');
+                    } else {
+                        showToast("No se pudieron identificar las columnas requeridas en el archivo.", "error");
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showToast("Ocurrió un error al procesar el archivo de Excel.", "error");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function loadDemoData() {
+            appState.catalog = [...DEMO_CATALOG];
+            initDefaultGlobalInsumos();
+            updateState();
+            showToast("Catálogo de prueba de Teknospazio cargado correctamente.", "success");
+        }
+
+        // ==========================================
+        // RENDER TABLES & PRESUPUESTO
+        // ==========================================
+        function renderCatalogTable() {
+            const tbody = document.getElementById('catalogTableBody');
+            const search = document.getElementById('catalogSearchInput')?.value.toLowerCase() || '';
+            if (!tbody) return;
+
+            const filtered = appState.catalog.filter(i => 
+                i.name.toLowerCase().includes(search) || 
+                i.id.toLowerCase().includes(search) || 
+                i.category.toLowerCase().includes(search)
+            );
+
+            document.getElementById('catalogCountText').innerText = `${filtered.length} de ${appState.catalog.length} artículos listados`;
+
+            tbody.innerHTML = filtered.map(item => `
+                <tr class="hover:bg-slate-50 transition">
+                    <td class="p-3 font-mono font-bold text-slate-700">${escapeHtml(item.id)}</td>
+                    <td class="p-3 font-medium text-slate-800">${escapeHtml(item.name)}</td>
+                    <td class="p-3"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-[10px] font-semibold">${escapeHtml(item.category)}</span></td>
+                    <td class="p-3 text-right font-bold text-brand-700">$${formatMXN(item.price)}</td>
+                    <td class="p-3 text-center text-slate-500">${escapeHtml(item.unit)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderPrintPresupuesto() {
+            document.getElementById('outClientName').innerText = appState.client.name || 'Cliente Particular';
+            document.getElementById('outClientPhone').innerText = appState.client.phone ? `Tel / WA: ${appState.client.phone}` : 'Tel: No registrado';
+            document.getElementById('outProjectAddress').innerText = appState.client.address || 'Ubicación no especificada';
+            document.getElementById('outDate').innerText = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            const container = document.getElementById('outBreakdownContainer');
+            container.innerHTML = '';
+
+            const marginFactor = 1 + (appState.profitMargin / 100);
+
+            appState.rooms.forEach((room, idx) => {
+                const areaNet = room.useDirectArea ? room.directArea : (room.length * room.width);
+                const areaGross = areaNet * (1 + (room.wastePct / 100));
+
+                const tileObj = appState.catalog.find(i => i.id === room.tileId) || { price: 0, name: 'Piso / Azulejo' };
+                const laborObj = appState.catalog.find(i => i.id === room.laborId) || { price: 0, name: 'Mano de Obra' };
+                const adhesiveObj = appState.catalog.find(i => i.id === (room.customAdhesiveId || appState.globalAdhesiveId)) || { price: 0, name: 'Adhesivo' };
+                const groutObj = appState.catalog.find(i => i.id === (room.customGroutId || appState.globalGroutId)) || { price: 0, name: 'Boquilla' };
+
+                const tileCostFinal = (areaGross * tileObj.price) * marginFactor;
+                const laborCostFinal = room.includeLabor ? ((areaNet * laborObj.price) * marginFactor) : 0;
+                
+                const adhesiveSacks = Math.ceil(areaGross / 4);
+                const groutSacks = Math.ceil(areaGross / 15);
+                const adhesiveCostFinal = (adhesiveSacks * adhesiveObj.price) * marginFactor;
+                const groutCostFinal = (groutSacks * groutObj.price) * marginFactor;
+
+                const roomTotal = tileCostFinal + laborCostFinal + adhesiveCostFinal + groutCostFinal;
+
+                const roomTableHtml = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center bg-slate-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold">
+                            <span>#${idx + 1}. ${escapeHtml(room.name)} (${areaNet.toFixed(2)} m² útiles)</span>
+                            <span>Subtotal: $${formatMXN(roomTotal)} MXN</span>
+                        </div>
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="text-slate-400 border-b border-slate-200 uppercase font-semibold text-[10px]">
+                                    <th class="py-1">Concepto / Material</th>
+                                    <th class="py-1 text-center">Cant. / Unidad</th>
+                                    <th class="py-1 text-right">Importe</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 text-slate-700">
+                                <tr>
+                                    <td class="py-1.5">
+                                        <span class="font-medium">${escapeHtml(tileObj.name)}</span>
+                                        <span class="block text-[10px] text-slate-400">+${room.wastePct}% merma de corte</span>
+                                    </td>
+                                    <td class="py-1.5 text-center">${areaGross.toFixed(2)} m²</td>
+                                    <td class="py-1.5 text-right font-medium">$${formatMXN(tileCostFinal)}</td>
+                                </tr>
+                                ${room.includeLabor ? `
+                                <tr>
+                                    <td class="py-1.5">${escapeHtml(laborObj.name)}</td>
+                                    <td class="py-1.5 text-center">${areaNet.toFixed(2)} m²</td>
+                                    <td class="py-1.5 text-right font-medium">$${formatMXN(laborCostFinal)}</td>
+                                </tr>
+                                ` : ''}
+                                <tr>
+                                    <td class="py-1.5">${escapeHtml(adhesiveObj.name)}</td>
+                                    <td class="py-1.5 text-center">${adhesiveSacks} sacos</td>
+                                    <td class="py-1.5 text-right font-medium">$${formatMXN(adhesiveCostFinal)}</td>
+                                </tr>
+                                <tr>
+                                    <td class="py-1.5">${escapeHtml(groutObj.name)}</td>
+                                    <td class="py-1.5 text-center">${groutSacks} bultos</td>
+                                    <td class="py-1.5 text-right font-medium">$${formatMXN(groutCostFinal)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', roomTableHtml);
+            });
+
+            const totals = calculateTotals();
+            document.getElementById('outSubtotal').innerText = '$' + formatMXN(totals.subtotal) + ' MXN';
+            
+
+            document.getElementById('outTotal').innerText = '$' + formatMXN(totals.total) + ' MXN';
+        }
+
+        // ==========================================
+        // EXPORT & SHARE FUNCTIONS
+        // ==========================================
+        function copyWhatsAppSummary() {
+            const totals = calculateTotals();
+            let text = `*COTIZACIÓN TEKNOSPAZIO DE RECUBRIMIENTOS*\n`;
+            text += `------------------------------------\n`;
+            text += `👤 *Cliente:* ${appState.client.name || 'Cliente'}\n`;
+            text += `📍 *Obra:* ${appState.client.address || 'Ubicación no especificada'}\n\n`;
+            text += `*DESGLOSE DE ESPACIOS:*\n`;
+
+            appState.rooms.forEach((r, idx) => {
+                const area = r.useDirectArea ? r.directArea : (r.length * r.width);
+                const tile = appState.catalog.find(i => i.id === r.tileId)?.name || 'Recubrimiento';
+                text += `${idx + 1}. *${r.name}* (${area.toFixed(1)} m²): ${tile}\n`;
+            });
+
+            text += `\n💰 *Total (IVA incluido):* $${formatMXN(totals.total)} MXN\n`;
+            text += `------------------------------------\n`;
+            text += `Quedamos a tus órdenes para confirmar tu pedido.`;
+
+            // Clipboard copy fallbacks
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text);
+            } else {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+            showToast("Resumen de cotización copiado para WhatsApp", "success");
+        }
+
+        // LOCAL STORAGE
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('teknospazio_app_state', JSON.stringify(appState));
+            } catch (e) { console.error(e); }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('teknospazio_app_state');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    appState = { ...appState, ...parsed };
+                    document.getElementById('clientName').value = appState.client.name || '';
+                    document.getElementById('clientPhone').value = appState.client.phone || '';
+                    document.getElementById('projectAddress').value = appState.client.address || '';
+                    document.getElementById('profitMarginInput').value = appState.profitMargin || 25;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function clearAllData() {
+            if (confirm("¿Deseas reiniciar la cotización actual? Se restablecerán las estancias.")) {
+                appState.rooms = [];
+                addRoom("Baño Principal");
+                updateState();
+                showToast("Cotización reiniciada.", "info");
+            }
+        }
+
+        // MODAL
+        function openCatalogModal() {
+            renderModalCatalogTable();
+            document.getElementById('catalogModal').classList.remove('hidden');
+        }
+
+        function closeCatalogModal() {
+            document.getElementById('catalogModal').classList.add('hidden');
+        }
+
+        function renderModalCatalogTable() {
+            const tbody = document.getElementById('modalCatalogTableBody');
+            const search = document.getElementById('modalSearchInput')?.value.toLowerCase() || '';
+            if (!tbody) return;
+
+            const filtered = appState.catalog.filter(i => 
+                i.name.toLowerCase().includes(search) || 
+                i.id.toLowerCase().includes(search)
+            );
+
+            tbody.innerHTML = filtered.map(item => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-2 font-mono font-bold text-slate-600">${escapeHtml(item.id)}</td>
+                    <td class="p-2 font-medium text-slate-800">${escapeHtml(item.name)}</td>
+                    <td class="p-2 text-slate-500">${escapeHtml(item.category)}</td>
+                    <td class="p-2 text-right font-bold text-brand-700">$${formatMXN(item.price)}</td>
+                </tr>
+            `).join('');
+        }
+
+        // HELPERS
+        function formatMXN(amount) {
+            return (amount || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function escapeHtml(str) {
+            return String(str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const colors = {
+                success: 'bg-emerald-600 text-white',
+                error: 'bg-red-600 text-white',
+                warning: 'bg-amber-500 text-white',
+                info: 'bg-slate-800 text-white'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `pointer-events-auto px-4 py-3 rounded-xl shadow-xl text-xs font-bold flex items-center gap-2 transition transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> ${escapeHtml(message)}`;
+
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        appState = {
+            client: { store: '', seller: '', name: '', phone: '', address: '' },
+            activeRoomId: null,
+            rooms: []
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', signIn);
+        document.getElementById('signupForm').addEventListener('submit', signUp);
+        document.getElementById('showSignupButton').addEventListener('click', showSignupForm);
+        document.getElementById('showLoginButton').addEventListener('click', () => showLoginForm());
+        document.getElementById('signupRole').addEventListener('change', updateSignupStoreVisibility);
+        document.getElementById('technicianName').addEventListener('change', showWorkflowActions);
+        window.addEventListener('load', initializeApp);
+
+        function showSignupForm() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('signupForm').classList.remove('hidden');
+            showLoginError('');
+            showSignupError('');
+            document.getElementById('loginNotice').classList.add('hidden');
+            updateSignupStoreVisibility();
+        }
+
+        function showLoginForm(notice = '') {
+            document.getElementById('signupForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            showSignupError('');
+            showLoginError('');
+            const noticeElement = document.getElementById('loginNotice');
+            noticeElement.textContent = notice;
+            noticeElement.classList.toggle('hidden', !notice);
+        }
+
+        function updateSignupStoreVisibility() {
+            const isSeller = document.getElementById('signupRole').value === 'seller';
+            const storeField = document.getElementById('signupStoreField');
+            const storeSelect = document.getElementById('signupStore');
+            storeField.classList.toggle('hidden', !isSeller);
+            storeSelect.required = isSeller;
+            if (!isSeller) storeSelect.value = '';
+        }
+
+        function showSignupError(message) {
+            const errorElement = document.getElementById('signupError');
+            errorElement.textContent = message;
+            errorElement.classList.toggle('hidden', !message);
+        }
+
+        async function initializeApp() {
+            const { data, error } = await supabaseClient.auth.getSession();
+            if (error) {
+                showLoginError('No se pudo verificar la sesión. Intenta de nuevo.');
+                console.error(error);
+                return;
+            }
+            if (data.session) {
+                await activateSession(data.session.user);
+            } else {
+                showAuthScreen();
+            }
+            supabaseClient.auth.onAuthStateChange((_event, session) => {
+                if (!session) showAuthScreen();
+            });
+        }
+
+        document.addEventListener('keydown', handlePhotoViewerKeydown);
+        document.getElementById('photoViewerModal').addEventListener('click', event => {
+            if (event.target.id === 'photoViewerModal') closePhotoViewer();
+        });
+
+        async function signIn(event) {
+            event.preventDefault();
+            const button = document.getElementById('loginSubmit');
+            button.disabled = true;
+            button.textContent = 'Iniciando sesión...';
+            showLoginError('');
+            const { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: document.getElementById('loginEmail').value.trim(),
+                password: document.getElementById('loginPassword').value
+            });
+            button.disabled = false;
+            button.textContent = 'Iniciar sesión';
+            if (error) {
+                showLoginError('No se pudo iniciar sesión. Revisa correo y contraseña.');
+                console.error(error);
+                return;
+            }
+            await activateSession(data.user);
+        }
+
+        async function signUp(event) {
+            event.preventDefault();
+            const button = document.getElementById('signupSubmit');
+            const role = document.getElementById('signupRole').value;
+            button.disabled = true;
+            button.textContent = 'Creando cuenta...';
+            showSignupError('');
+
+            const { data, error } = await supabaseClient.auth.signUp({
+                email: document.getElementById('signupEmail').value.trim(),
+                password: document.getElementById('signupPassword').value,
+                options: {
+                    data: {
+                        display_name: document.getElementById('signupName').value.trim(),
+                        role,
+                        store: role === 'seller' ? document.getElementById('signupStore').value : null
+                    }
+                }
+            });
+
+            button.disabled = false;
+            button.textContent = 'Crear cuenta';
+            if (error) {
+                showSignupError('No se pudo crear la cuenta. Verifica los datos e inténtalo de nuevo.');
+                console.error(error);
+                return;
+            }
+
+            if (data.session) {
+                await activateSession(data.user);
+                return;
+            }
+
+            document.getElementById('signupForm').reset();
+            updateSignupStoreVisibility();
+            showLoginForm('Cuenta creada. Revisa tu correo y confirma la dirección antes de iniciar sesión.');
+        }
+
+        async function activateSession(user) {
+            currentUser = user;
+            const { data: profile, error } = await supabaseClient
+                .from('profiles')
+                .select('id, display_name, role, store')
+                .eq('id', user.id)
+                .maybeSingle();
+            if (error) {
+                console.error(error);
+                await supabaseClient.auth.signOut();
+                showLoginError('No se pudo cargar tu perfil de acceso.');
+                return;
+            }
+            if (!profile) {
+                await supabaseClient.auth.signOut();
+                showLoginError('No se encontró el perfil de esta cuenta. Verifica que la migración de autorregistro esté aplicada en Supabase.');
+                return;
+            }
+            currentProfile = profile;
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('appHeader').classList.remove('hidden');
+            document.getElementById('appMain').classList.remove('hidden');
+            const roleLabels = { seller: 'vendedor', technician: 'técnico', admin: 'administrador' };
+            document.getElementById('signedInUser').textContent = `${profile.display_name} · ${profile.role === 'seller' ? profile.store : roleLabels[profile.role] || profile.role}`;
+            configureUserInterface();
+            await loadTechnicians();
+            await loadQuotesList();
+            resetQuoteEditor();
+        }
+
+        function showAuthScreen() {
+            currentUser = null;
+            currentProfile = null;
+            currentQuote = null;
+            document.getElementById('appHeader').classList.add('hidden');
+            document.getElementById('appMain').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+            showLoginForm();
+        }
+
+        function showLoginError(message) {
+            const errorElement = document.getElementById('loginError');
+            errorElement.textContent = message;
+            errorElement.classList.toggle('hidden', !message);
+        }
+
+        async function signOut() {
+            const { error } = await supabaseClient.auth.signOut();
+            if (error) {
+                console.error(error);
+                showToast('No se pudo cerrar la sesión.', 'error');
+                return;
+            }
+            localStorage.removeItem('teknospazio_app_state');
+            location.reload();
+        }
+
+        function configureUserInterface() {
+            const isSeller = currentProfile.role === 'seller';
+            const isTechnician = currentProfile.role === 'technician';
+            document.getElementById('dashboardTitle').textContent = isSeller ? 'Solicitudes de mi tienda' : 'Bandeja de cotizaciones';
+            document.getElementById('dashboardDescription').textContent = isSeller
+                ? `Tienda asignada: ${currentProfile.store}. Desde aquí puedes enviar solicitudes y revisar cotizaciones.`
+                : 'Abre las solicitudes nuevas para asignarlas a un técnico o continuar con la cotización.';
+            document.getElementById('newQuoteButton').classList.toggle('hidden', !isSeller);
+            document.getElementById('technicianSearch').classList.toggle('hidden', !isTechnician);
+            const storeSelect = document.getElementById('clientStore');
+            if (isSeller) {
+                storeSelect.value = currentProfile.store;
+                storeSelect.disabled = true;
+            } else {
+                storeSelect.disabled = true;
+            }
+            const canAssignTechnician = ['technician', 'admin'].includes(currentProfile.role);
+            document.getElementById('technicianSelectField').classList.toggle('hidden', !canAssignTechnician);
+            document.getElementById('technicianDisplayField').classList.toggle('hidden', canAssignTechnician);
+        }
+
+        function setEditorNavigationVisible(visible) {
+            ['tab-btn-cliente', 'tab-btn-cotiz', 'tab-btn-preview'].forEach(id => {
+                document.getElementById(id).classList.toggle('hidden', !visible);
+            });
+        }
+
+        function resetQuoteEditor() {
+            currentQuote = null;
+            appState = {
+                client: {
+                    store: currentProfile.role === 'seller' ? currentProfile.store : '',
+                    seller: currentProfile.role === 'seller' ? currentProfile.display_name : '',
+                    technician: '',
+                    name: '',
+                    phone: '',
+                    address: ''
+                },
+                activeRoomId: null,
+                rooms: []
+            };
+            const form = document.getElementById('loginForm');
+            if (form) form.reset();
+            document.getElementById('clientStore').value = appState.client.store;
+            document.getElementById('sellerName').value = appState.client.seller;
+            document.getElementById('technicianName').value = '';
+            document.getElementById('technicianDisplay').textContent = 'Pendiente de asignación';
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientPhone').value = '';
+            document.getElementById('projectAddress').value = '';
+            suspendDraftSave = true;
+            try {
+                addRoom();
+            } finally {
+                suspendDraftSave = false;
+            }
+            document.getElementById('quoteWorkflowBar').classList.add('hidden');
+            document.getElementById('quoteDashboard').classList.remove('hidden');
+            setEditorNavigationVisible(false);
+            document.querySelectorAll('.tab-content').forEach(element => element.classList.add('hidden'));
+            showWorkflowActions();
+        }
+
+        async function loadTechnicians() {
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('id, display_name')
+                .eq('role', 'technician')
+                .order('display_name');
+            if (error) {
+                console.error(error);
+                showToast('No se pudo cargar el directorio de técnicos.', 'error');
+                return;
+            }
+            technicianProfiles = data || [];
+            const select = document.getElementById('technicianName');
+            select.innerHTML = '<option value="">Selecciona un técnico</option>' +
+                technicianProfiles.map(profile => `<option value="${escapeHtml(profile.id)}">${escapeHtml(profile.display_name)}</option>`).join('');
+        }
+
+        async function loadQuotesList() {
+            const list = document.getElementById('quotesList');
+            list.innerHTML = '<p class="text-sm text-slate-500">Cargando solicitudes...</p>';
+            let query = supabaseClient
+                .from('quotes')
+                .select('id, folio, store, seller_name, client_name, status, technician_id, created_at')
+                .order('created_at', { ascending: false })
+                .limit(100);
+            if (currentProfile.role === 'seller') query = query.eq('store', currentProfile.store);
+            const { data, error } = await query;
+            if (error) {
+                console.error(error);
+                list.innerHTML = '<p class="text-sm text-red-600">No se pudieron cargar las solicitudes.</p>';
+                return;
+            }
+            if (!data.length) {
+                list.innerHTML = '<p class="text-sm text-slate-500">Todavía no hay cotizaciones guardadas.</p>';
+                return;
+            }
+            list.innerHTML = data.map(quote => {
+                const technician = technicianProfiles.find(profile => profile.id === quote.technician_id)?.display_name || 'Sin asignar';
+                return `<button type="button" onclick="openQuote('${quote.id}')" class="grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-0.5 rounded-lg border border-slate-200 px-3 py-2 text-left hover:border-brand-500 hover:bg-brand-50 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_auto] sm:gap-3">
+                    <strong class="text-xs font-bold text-brand-800">${escapeHtml(quote.folio || 'Sin folio')}</strong>
+                    <span class="min-w-0 truncate text-xs font-medium text-slate-800">${escapeHtml(quote.client_name || 'Cliente sin nombre')}</span>
+                    <span class="col-span-2 flex min-w-0 items-center justify-between gap-2 text-[10px] text-slate-500 sm:col-span-1 sm:justify-end">
+                        <span class="truncate">${escapeHtml(quote.store)} · ${escapeHtml(technician)}</span>
+                        <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 font-semibold">${escapeHtml(quoteStatuses[quote.status] || quote.status)}</span>
+                    </span>
+                </button>`;
+            }).join('');
+        }
+
+        async function searchQuoteByFolio() {
+            const folio = document.getElementById('folioSearch').value.trim().toUpperCase();
+            if (!folio) {
+                showToast('Escribe el folio que quieres buscar.', 'warning');
+                return;
+            }
+            const { data, error } = await supabaseClient.from('quotes').select('id').eq('folio', folio).maybeSingle();
+            if (error) {
+                console.error(error);
+                showToast('No se pudo buscar el folio.', 'error');
+                return;
+            }
+            if (!data) {
+                showToast('No se encontró una cotización con ese folio.', 'warning');
+                return;
+            }
+            await openQuote(data.id);
+        }
+
+        function showWorkflowActions() {
+            const bar = document.getElementById('quoteWorkflowBar');
+            bar.classList.toggle('hidden', !currentQuote);
+            if (!currentQuote) return;
+            document.getElementById('activeQuoteFolio').textContent = currentQuote.folio;
+            document.getElementById('activeQuoteStatus').textContent = quoteStatuses[currentQuote.status] || currentQuote.status;
+            const isSeller = currentProfile.role === 'seller';
+            const canAssignTechnician = ['technician', 'admin'].includes(currentProfile.role);
+            const isCurrentSeller = isSeller && currentQuote.created_by === currentUser.id;
+            const canAssignedTechnicianEdit = canEditCurrentQuote();
+            document.getElementById('saveRequestButton').classList.toggle('hidden', !isSeller || currentQuote.id);
+            const assignButton = document.getElementById('assignTechnicianButton');
+            assignButton.classList.toggle('hidden', !canAssignTechnician || !currentQuote.id || currentQuote.status !== 'requested');
+            assignButton.textContent = currentQuote.technician_id ? 'Cambiar técnico' : 'Asignar técnico';
+            assignButton.disabled = !document.getElementById('technicianName').value
+                || document.getElementById('technicianName').value === currentQuote.technician_id;
+            document.getElementById('techSaveButton').textContent = currentProfile.role === 'admin'
+                ? 'Guardar cambios'
+                : 'Guardar avances';
+            document.getElementById('techSaveButton').classList.toggle('hidden', !canAssignedTechnicianEdit);
+            document.getElementById('techCompleteButton').classList.toggle('hidden', !canAssignedTechnicianEdit);
+            document.getElementById('sellerSentButton').classList.toggle('hidden', !isCurrentSeller || currentQuote.status !== 'ready_for_review');
+            document.getElementById('sellerAcceptedButton').classList.toggle('hidden', !isCurrentSeller || currentQuote.status !== 'sent');
+            document.getElementById('sellerRejectedButton').classList.toggle('hidden', !isCurrentSeller || currentQuote.status !== 'sent');
+        }
+
+        function canEditCurrentQuote() {
+            if (!currentProfile) return false;
+            if (currentProfile.role === 'admin') return true;
+            if (!currentQuote?.id) return currentProfile.role === 'seller';
+            if (currentProfile.role === 'seller') {
+                return currentQuote.created_by === currentUser.id && currentQuote.status === 'requested';
+            }
+            return currentProfile.role === 'technician'
+                && currentQuote.technician_id === currentUser.id
+                && ['requested', 'in_progress'].includes(currentQuote.status);
+        }
+
+        async function assignQuoteTechnician() {
+            if (!['technician', 'admin'].includes(currentProfile?.role) || !currentQuote?.id || currentQuote.status !== 'requested') return;
+            const technician = technicianProfiles.find(profile => profile.id === document.getElementById('technicianName').value);
+            if (!technician) {
+                showToast('Selecciona un técnico antes de asignar la solicitud.', 'warning');
+                return;
+            }
+            try {
+                const { data, error } = await supabaseClient.from('quotes')
+                    .update({ technician_id: technician.id })
+                    .eq('id', currentQuote.id)
+                    .select('id, folio, status, store, seller_name, technician_id, client_name, client_phone, project_address, created_by')
+                    .single();
+                if (error) throw error;
+                currentQuote = { ...currentQuote, ...data };
+                appState.technicianId = technician.id;
+                appState.client.technician = technician.display_name;
+                fillQuoteForm();
+                showWorkflowActions();
+                await loadQuotesList();
+                showToast(`Solicitud ${currentQuote.folio} asignada a ${technician.display_name}.`, 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('No se pudo asignar el técnico. Verifica los permisos y vuelve a intentar.', 'error');
+            }
+        }
+
+        function startNewQuote() {
+            if (currentProfile.role !== 'seller') return;
+            let savedDraft = null;
+            try {
+                const rawDraft = localStorage.getItem(`teknospazio_draft_${currentUser.id}`);
+                if (rawDraft) savedDraft = JSON.parse(rawDraft);
+            } catch (error) {
+                console.error(error);
+                showToast('No se pudo recuperar el borrador local.', 'error');
+            }
+            resetQuoteEditor();
+            if (savedDraft && Array.isArray(savedDraft.rooms)) {
+                appState = savedDraft;
+                appState.client = {
+                    ...appState.client,
+                    store: currentProfile.store,
+                    seller: appState.client.seller || currentProfile.display_name
+                };
+                appState.technicianId = '';
+                appState.client.technician = '';
+                fillQuoteForm();
+            }
+            currentQuote = { id: null, folio: 'Se asignará al enviar', status: 'draft' };
+            document.getElementById('quoteDashboard').classList.add('hidden');
+            setEditorNavigationVisible(true);
+            document.getElementById('quoteWorkflowBar').classList.remove('hidden');
+            document.getElementById('activeQuoteFolio').textContent = currentQuote.folio;
+            document.getElementById('activeQuoteStatus').textContent = 'Borrador';
+            document.getElementById('saveRequestButton').classList.remove('hidden');
+            switchTab('cliente');
+        }
+
+        async function openQuote(quoteId) {
+            const { data: quote, error } = await supabaseClient.from('quotes').select('*').eq('id', quoteId).single();
+            if (error) {
+                console.error(error);
+                showToast('No se pudo abrir la cotización.', 'error');
+                return;
+            }
+            currentQuote = quote;
+            const payload = quote.payload || {};
+            appState = {
+                client: {
+                    ...(payload.client || {}),
+                    store: quote.store,
+                    seller: quote.seller_name,
+                    technician: technicianProfiles.find(profile => profile.id === quote.technician_id)?.display_name || '',
+                    name: quote.client_name || '',
+                    phone: quote.client_phone || '',
+                    address: quote.project_address || ''
+                },
+                activeRoomId: payload.activeRoomId || payload.rooms?.[0]?.id || null,
+                rooms: Array.isArray(payload.rooms) ? payload.rooms : []
+            };
+            appState.technicianId = quote.technician_id || '';
+            const assignedTechnician = technicianProfiles.find(profile => profile.id === quote.technician_id);
+            document.getElementById('technicianDisplay').textContent = assignedTechnician?.display_name || 'Pendiente de asignación';
+            if (!appState.rooms.length) appState.rooms = [createEmptyRoom()];
+            fillQuoteForm();
+            document.getElementById('technicianName').value = appState.technicianId;
+            document.getElementById('quoteDashboard').classList.add('hidden');
+            setEditorNavigationVisible(true);
+            document.getElementById('quoteWorkflowBar').classList.remove('hidden');
+            showWorkflowActions();
+            switchTab(currentProfile.role === 'technician' && quote.technician_id === currentUser.id
+                ? 'cotizador'
+                : 'cliente');
+        }
+
+        function createEmptyRoom() {
+            return {
+                id: createId('area'), name: '', length: '', width: '', wastePct: 10,
+                notes: '',
+                workDuration: '', workSchedule: '', workStartTime: '', workEndTime: '',
+                workStartDate: '', materials: []
+            };
+        }
+
+        function fillQuoteForm() {
+            document.getElementById('clientStore').value = appState.client.store || '';
+            document.getElementById('sellerName').value = appState.client.seller || '';
+            document.getElementById('technicianName').value = appState.technicianId || '';
+            const assignedTechnician = technicianProfiles.find(profile => profile.id === appState.technicianId);
+            document.getElementById('technicianDisplay').textContent = assignedTechnician?.display_name || 'Pendiente de asignación';
+            document.getElementById('clientName').value = appState.client.name || '';
+            document.getElementById('clientPhone').value = appState.client.phone || '';
+            document.getElementById('projectAddress').value = appState.client.address || '';
+            const readOnly = currentProfile.role === 'seller' && currentQuote?.id && (
+                currentQuote.created_by !== currentUser.id ||
+                !['draft', 'requested'].includes(currentQuote.status)
+            );
+            const clientFieldsReadOnly = currentProfile.role === 'technician' || readOnly;
+            ['clientName', 'clientPhone', 'projectAddress'].forEach(id => {
+                document.getElementById(id).readOnly = clientFieldsReadOnly;
+            });
+            document.getElementById('sellerName').readOnly = Boolean(currentQuote?.id) || currentProfile.role !== 'seller';
+            document.getElementById('technicianName').disabled = !['technician', 'admin'].includes(currentProfile.role);
+            if (currentProfile.role === 'technician' || currentProfile.role === 'seller' && currentQuote?.id && currentQuote.status !== 'requested') {
+                const canEdit = currentProfile.role === 'technician' && canEditCurrentQuote();
+                document.querySelectorAll('#tab-cotizador input, #tab-cotizador select, #tab-cotizador textarea, #tab-cotizador button')
+                    .forEach(control => { control.disabled = !canEdit; });
+            }
+            renderRooms();
+            calculateTotals();
+        }
+
+        function quotePayload() {
+            return {
+                client: appState.client,
+                activeRoomId: appState.activeRoomId,
+                rooms: appState.rooms
+            };
+        }
+
+        async function submitQuoteRequest() {
+            if (!currentProfile || currentProfile.role !== 'seller') return;
+            updateState();
+            const clientName = appState.client.name.trim();
+            if (!clientName) {
+                showToast('Escribe el nombre del cliente antes de enviar la solicitud.', 'warning');
+                return;
+            }
+            const { data, error } = await supabaseClient.from('quotes').insert({
+                store: currentProfile.store,
+                seller_name: appState.client.seller.trim() || currentProfile.display_name,
+                technician_id: null,
+                client_name: clientName,
+                client_phone: appState.client.phone,
+                project_address: appState.client.address,
+                status: 'requested',
+                payload: quotePayload()
+            }).select('id, folio, status, store, seller_name, technician_id, client_name, client_phone, project_address, created_by').single();
+            if (error) {
+                console.error(error);
+                showToast('No se pudo enviar la solicitud. Revisa tu perfil y vuelve a intentar.', 'error');
+                return;
+            }
+            currentQuote = { ...data, created_by: currentUser.id, payload: quotePayload() };
+            localStorage.removeItem(`teknospazio_draft_${currentUser.id}`);
+            try {
+                await associatePendingLocalPhotos(data.id);
+                await uploadPendingLocalPhotos(data.id);
+            } catch (photoError) {
+                console.error(photoError);
+                showToast('La solicitud se creó, pero algunas fotos no se pudieron subir. Puedes volver a intentarlo.', 'error');
+            }
+            showWorkflowActions();
+            await loadQuotesList();
+            showToast(`Solicitud enviada. Folio asignado: ${data.folio}`, 'success');
+        }
+
+        async function persistActiveQuote(status = currentQuote?.status) {
+            if (!currentQuote?.id) return;
+            const update = {
+                client_name: appState.client.name || '',
+                client_phone: appState.client.phone || '',
+                project_address: appState.client.address || '',
+                payload: quotePayload(),
+                status
+            };
+            const { data, error } = await supabaseClient.from('quotes')
+                .update(update).eq('id', currentQuote.id)
+                .select('id, folio, status, store, seller_name, technician_id, client_name, client_phone, project_address, created_by')
+                .single();
+            if (error) throw error;
+            currentQuote = data;
+            try {
+                await uploadPendingLocalPhotos(data.id);
+            } catch (photoError) {
+                console.error(photoError);
+                showToast('Se guardaron los datos, pero algunas fotos no se pudieron subir.', 'error');
+            }
+            showWorkflowActions();
+        }
+
+        function scheduleCloudSave() {
+            if (!currentQuote?.id || !currentProfile) return;
+            if (currentProfile.role === 'seller' && currentQuote.status !== 'requested') return;
+            if (currentProfile.role === 'technician' && !canEditCurrentQuote()) return;
+            clearTimeout(quoteSaveTimer);
+            quoteSaveTimer = setTimeout(async () => {
+                try {
+                    await persistActiveQuote();
+                } catch (error) {
+                    console.error(error);
+                    showToast('No se guardaron los cambios en Supabase. Intenta guardar de nuevo.', 'error');
+                }
+            }, 700);
+        }
+
+        async function saveTechnicianQuote(completed) {
+            if (!['technician', 'admin'].includes(currentProfile?.role) || !canEditCurrentQuote()) {
+                showToast('No tienes permiso para editar esta cotización en su estado actual.', 'error');
+                return;
+            }
+            clearTimeout(quoteSaveTimer);
+            try {
+                const nextStatus = completed
+                    ? 'ready_for_review'
+                    : currentProfile.role === 'admin'
+                        ? currentQuote.status
+                        : currentQuote.status === 'requested' ? 'in_progress' : currentQuote.status;
+                await persistActiveQuote(nextStatus);
+                await loadQuotesList();
+                const message = completed
+                    ? 'Cotización lista para revisión del vendedor.'
+                    : currentProfile.role === 'admin' ? 'Cambios guardados.' : 'Avances guardados.';
+                showToast(message, 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('No se pudo guardar la cotización en Supabase.', 'error');
+            }
+        }
+
+        async function setSellerQuoteStatus(status) {
+            try {
+                await supabaseClient.from('quotes').update({ status }).eq('id', currentQuote.id).throwOnError();
+                currentQuote.status = status;
+                showWorkflowActions();
+                await loadQuotesList();
+                showToast('Estado de la cotización actualizado.', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('No se pudo actualizar el estado de la cotización.', 'error');
+            }
+        }
+
+        async function returnToQuoteList() {
+            clearTimeout(quoteSaveTimer);
+            const canSave = currentQuote?.id && (
+                canEditCurrentQuote()
+            );
+            if (canSave) {
+                try {
+                    await persistActiveQuote();
+                } catch (error) {
+                    console.error(error);
+                    showToast('No se guardaron los últimos cambios. Intenta de nuevo antes de salir.', 'error');
+                    return;
+                }
+            }
+            document.getElementById('quoteWorkflowBar').classList.add('hidden');
+            document.getElementById('quoteDashboard').classList.remove('hidden');
+            setEditorNavigationVisible(false);
+            document.querySelectorAll('.tab-content').forEach(element => element.classList.add('hidden'));
+            loadQuotesList();
+        }
+
+        function switchTab(tabName) {
+            const tab = document.getElementById('tab-' + tabName);
+            if (!tab) return;
+
+            document.querySelectorAll('.tab-content').forEach(element => element.classList.add('hidden'));
+            tab.classList.remove('hidden');
+
+            const tabButtons = {
+                cliente: document.getElementById('tab-btn-cliente'),
+                cotizador: document.getElementById('tab-btn-cotiz'),
+                presupuesto: document.getElementById('tab-btn-preview')
+            };
+            Object.entries(tabButtons).forEach(([name, button]) => {
+                const active = name === tabName;
+                button.setAttribute('aria-selected', String(active));
+                button.classList.toggle('bg-brand-600', active);
+                button.classList.toggle('text-white', active);
+                button.classList.toggle('text-slate-300', !active);
+                button.classList.toggle('hover:bg-slate-800', !active);
+            });
+
+            if (tabName === 'presupuesto') renderPrintPresupuesto();
+        }
+
+        function createId(prefix) {
+            return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        }
+
+        function addRoom() {
+            const room = {
+                id: createId('area'),
+                name: '',
+                length: '',
+                width: '',
+                wastePct: 10,
+                notes: '',
+                workDuration: '',
+                workSchedule: '',
+                workStartTime: '',
+                workEndTime: '',
+                workStartDate: '',
+                materials: []
+            };
+            appState.rooms.push(room);
+            appState.activeRoomId = room.id;
+            updateState();
+        }
+
+        function setActiveRoom(roomId) {
+            if (!appState.rooms.some(room => room.id === roomId)) return;
+            appState.activeRoomId = roomId;
+            renderRooms();
+        }
+
+        function openPhotosDatabase() {
+            if (!('indexedDB' in window)) {
+                return Promise.reject(new Error('Este navegador no permite guardar fotos localmente.'));
+            }
+            if (!photosDatabasePromise) {
+                photosDatabasePromise = new Promise((resolve, reject) => {
+                    const request = indexedDB.open('teknospazio_photos', 1);
+                    request.onupgradeneeded = () => {
+                        const database = request.result;
+                        if (!database.objectStoreNames.contains('photos')) {
+                            const store = database.createObjectStore('photos', { keyPath: 'id' });
+                            store.createIndex('roomId', 'roomId', { unique: false });
+                        }
+                    };
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error || new Error('No se pudo abrir el almacenamiento de fotos.'));
+                    request.onblocked = () => reject(new Error('El almacenamiento de fotos está ocupado por otra pestaña.'));
+                }).catch(error => {
+                    photosDatabasePromise = null;
+                    throw error;
+                });
+            }
+            return photosDatabasePromise;
+        }
+
+        async function getLocalRoomPhotos(roomId = null, quoteId = currentQuote?.id || null) {
+            const database = await openPhotosDatabase();
+            return new Promise((resolve, reject) => {
+                const transaction = database.transaction('photos', 'readonly');
+                const store = transaction.objectStore('photos');
+                const request = store.getAll();
+                request.onsuccess = () => resolve(request.result.filter(photo =>
+                    photo.userId === currentUser?.id
+                    && (photo.quoteId || null) === quoteId
+                    && (!roomId || photo.roomId === roomId)
+                ));
+                request.onerror = () => reject(request.error || new Error('No se pudieron cargar las fotos del área.'));
+            });
+        }
+
+        async function storeLocalRoomPhoto(photo) {
+            const database = await openPhotosDatabase();
+            return new Promise((resolve, reject) => {
+                const transaction = database.transaction('photos', 'readwrite');
+                transaction.objectStore('photos').put(photo);
+                transaction.oncomplete = resolve;
+                transaction.onerror = () => reject(transaction.error || new Error('No se pudo guardar la foto.'));
+                transaction.onabort = () => reject(transaction.error || new Error('No se pudo guardar la foto.'));
+            });
+        }
+
+        async function deleteLocalRoomPhoto(photoId) {
+            const database = await openPhotosDatabase();
+            return new Promise((resolve, reject) => {
+                const transaction = database.transaction('photos', 'readwrite');
+                transaction.objectStore('photos').delete(photoId);
+                transaction.oncomplete = resolve;
+                transaction.onerror = () => reject(transaction.error || new Error('No se pudo eliminar la foto.'));
+                transaction.onabort = () => reject(transaction.error || new Error('No se pudo eliminar la foto.'));
+            });
+        }
+
+        async function getRoomPhotos(roomId) {
+            if (!currentQuote?.id) return getLocalRoomPhotos(roomId);
+            const cacheKey = `${currentQuote.id}:${roomId}`;
+            if (roomPhotosCache.has(cacheKey)) return roomPhotosCache.get(cacheKey);
+            const { data: records, error } = await supabaseClient.from('quote_photos')
+                .select('*')
+                .eq('quote_id', currentQuote.id)
+                .eq('room_id', roomId)
+                .order('created_at', { ascending: true });
+            if (error) throw error;
+            const cloudPhotos = await Promise.all((records || []).map(async record => {
+                const { data: blob, error: downloadError } = await supabaseClient.storage
+                    .from('quote-photos').download(record.storage_path);
+                if (downloadError) throw downloadError;
+                return { ...record, blob, createdAt: record.created_at, purpose: record.purpose, slot: record.slot };
+            }));
+            const pendingPhotos = await getLocalRoomPhotos(roomId, currentQuote.id);
+            const photos = [...cloudPhotos, ...pendingPhotos];
+            roomPhotosCache.set(cacheKey, photos);
+            return photos;
+        }
+
+        async function storeCloudRoomPhoto(photo) {
+            const safeName = photo.name.replace(/[^a-zA-Z0-9._-]/g, '_').slice(-100) || 'photo';
+            const storagePath = `${currentQuote.id}/${photo.roomId}/${createId('image')}-${safeName}`;
+            const { error: uploadError } = await supabaseClient.storage.from('quote-photos')
+                .upload(storagePath, photo.blob, { contentType: photo.type, upsert: false });
+            if (uploadError) throw uploadError;
+            const { data, error } = await supabaseClient.from('quote_photos').insert({
+                quote_id: currentQuote.id,
+                room_id: photo.roomId,
+                purpose: photo.purpose || 'area',
+                slot: photo.purpose === 'budget' ? photo.slot : null,
+                name: photo.name,
+                storage_path: storagePath,
+                content_type: photo.type
+            }).select().single();
+            if (error) {
+                const { error: cleanupError } = await supabaseClient.storage.from('quote-photos').remove([storagePath]);
+                if (cleanupError) console.error(cleanupError);
+                throw error;
+            }
+            roomPhotosCache.delete(`${currentQuote.id}:${photo.roomId}`);
+            return data;
+        }
+
+        async function storeRoomPhoto(photo) {
+            if (currentQuote?.id) return storeCloudRoomPhoto(photo);
+            return storeLocalRoomPhoto(photo);
+        }
+
+        async function deleteRoomPhoto(photoId) {
+            if (!currentQuote?.id) return deleteLocalRoomPhoto(photoId);
+            const pendingPhoto = (await getLocalRoomPhotos()).find(photo => photo.id === photoId);
+            if (pendingPhoto) {
+                await deleteLocalRoomPhoto(photoId);
+                roomPhotosCache.delete(`${currentQuote.id}:${pendingPhoto.roomId}`);
+                return;
+            }
+            const { data: photo, error: lookupError } = await supabaseClient.from('quote_photos')
+                .select('storage_path, room_id').eq('id', photoId).eq('quote_id', currentQuote.id).single();
+            if (lookupError) throw lookupError;
+            const { error: objectError } = await supabaseClient.storage.from('quote-photos').remove([photo.storage_path]);
+            if (objectError) throw objectError;
+            const { error } = await supabaseClient.from('quote_photos').delete().eq('id', photoId).eq('quote_id', currentQuote.id);
+            if (error) throw error;
+            roomPhotosCache.delete(`${currentQuote.id}:${photo.room_id}`);
+        }
+
+        async function uploadPendingLocalPhotos(quoteId) {
+            if (!quoteId) return;
+            const pendingPhotos = await getLocalRoomPhotos();
+            const originalQuote = currentQuote;
+            if (!currentQuote?.id) currentQuote = { id: quoteId };
+            try {
+                for (const photo of pendingPhotos) {
+                    await storeCloudRoomPhoto(photo);
+                    await deleteLocalRoomPhoto(photo.id);
+                }
+            } finally {
+                currentQuote = originalQuote || currentQuote;
+            }
+            appState.rooms.forEach(room => {
+                renderRoomPhotos(room.id);
+                renderBudgetPhotoInputs(room.id);
+            });
+        }
+
+        async function associatePendingLocalPhotos(quoteId) {
+            const photos = await getLocalRoomPhotos(null, null);
+            for (const photo of photos) {
+                photo.quoteId = quoteId;
+                await storeLocalRoomPhoto(photo);
+            }
+        }
+
+        async function deleteRoomPhotos(roomId) {
+            const photos = await getRoomPhotos(roomId);
+            await Promise.all(photos.map(photo => deleteRoomPhoto(photo.id)));
+            photos.forEach(photo => {
+                const url = roomPhotoUrls.get(photo.id);
+                if (url) URL.revokeObjectURL(url);
+                roomPhotoUrls.delete(photo.id);
+            });
+        }
+
+        function getPhotoObjectUrl(photo) {
+            let url = roomPhotoUrls.get(photo.id);
+            if (!url) {
+                url = URL.createObjectURL(photo.blob);
+                roomPhotoUrls.set(photo.id, url);
+            }
+            return url;
+        }
+
+        async function openPhotoViewer(photoId, roomId, purpose = 'area') {
+            try {
+                const photos = (await getRoomPhotos(roomId))
+                    .filter(photo => (photo.purpose || 'area') === purpose);
+                const index = photos.findIndex(photo => photo.id === photoId);
+                if (index < 0) {
+                    showToast('No se pudo encontrar la foto seleccionada.', 'error');
+                    return;
+                }
+                photoViewerState = { photos, index, roomId, purpose, zoom: 1 };
+                photoViewerReturnFocus = document.activeElement;
+                document.body.style.overflow = 'hidden';
+                renderPhotoViewer();
+                const modal = document.getElementById('photoViewerModal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                modal.focus();
+            } catch (error) {
+                console.error(error);
+                showToast('No se pudo abrir la foto.', 'error');
+            }
+        }
+
+        function renderPhotoViewer() {
+            if (!photoViewerState) return;
+            const { photos, index, purpose, zoom } = photoViewerState;
+            const photo = photos[index];
+            const image = document.getElementById('photoViewerImage');
+            image.src = getPhotoObjectUrl(photo);
+            image.alt = photo.name || 'Foto';
+            image.style.setProperty('--photo-viewer-zoom', zoom);
+            document.getElementById('photoViewerTitle').textContent = photo.name || (purpose === 'area' ? 'Foto del área' : 'Foto para presupuesto');
+            document.getElementById('photoViewerCounter').textContent = `${purpose === 'area' ? 'Foto del área' : 'Imagen para presupuesto'} · ${index + 1} de ${photos.length}`;
+            document.getElementById('photoViewerZoomLabel').textContent = `${Math.round(zoom * 100)}%`;
+            document.getElementById('photoViewerPrevious').classList.toggle('hidden', photos.length < 2);
+            document.getElementById('photoViewerNext').classList.toggle('hidden', photos.length < 2);
+            document.getElementById('photoViewerDownload').classList.toggle('hidden', purpose !== 'area');
+        }
+
+        function closePhotoViewer() {
+            const modal = document.getElementById('photoViewerModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.getElementById('photoViewerImage').removeAttribute('src');
+            document.body.style.overflow = '';
+            photoViewerState = null;
+            if (photoViewerReturnFocus?.isConnected) photoViewerReturnFocus.focus();
+            photoViewerReturnFocus = null;
+        }
+
+        function stepPhotoViewer(direction) {
+            if (!photoViewerState || photoViewerState.photos.length < 2) return;
+            const count = photoViewerState.photos.length;
+            photoViewerState.index = (photoViewerState.index + direction + count) % count;
+            photoViewerState.zoom = 1;
+            renderPhotoViewer();
+        }
+
+        function zoomPhoto(amount) {
+            if (!photoViewerState) return;
+            photoViewerState.zoom = Math.max(0.5, Math.min(4, photoViewerState.zoom + amount));
+            renderPhotoViewer();
+        }
+
+        function resetPhotoZoom() {
+            if (!photoViewerState) return;
+            photoViewerState.zoom = 1;
+            renderPhotoViewer();
+        }
+
+        function downloadCurrentAreaPhoto() {
+            if (!photoViewerState || photoViewerState.purpose !== 'area') return;
+            const photo = photoViewerState.photos[photoViewerState.index];
+            const link = document.createElement('a');
+            link.href = getPhotoObjectUrl(photo);
+            link.download = photo.name || 'foto-del-area';
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+        function handlePhotoViewerKeydown(event) {
+            if (!photoViewerState) return;
+            if (event.key === 'Escape') {
+                closePhotoViewer();
+                return;
+            }
+            if (event.key === 'ArrowLeft') stepPhotoViewer(-1);
+            if (event.key === 'ArrowRight') stepPhotoViewer(1);
+        }
+
+        async function renderRoomPhotos(roomId) {
+            const container = document.getElementById(`room-photos-${roomId}`);
+            if (!container) return;
+            container.innerHTML = '<p class="text-xs text-slate-500">Cargando fotos...</p>';
+            try {
+                const photos = (await getRoomPhotos(roomId)).filter(photo => photo.purpose !== 'budget');
+                const currentContainer = document.getElementById(`room-photos-${roomId}`);
+                if (!currentContainer) return;
+                if (photos.length === 0) {
+                    currentContainer.innerHTML = '<p class="text-xs text-slate-500">Aún no hay fotos en esta área.</p>';
+                    return;
+                }
+                currentContainer.innerHTML = photos.map(photo => {
+                    const url = getPhotoObjectUrl(photo);
+                    return `
+                        <figure class="relative w-28 shrink-0">
+                            <button type="button" onclick="openPhotoViewer('${photo.id}', '${roomId}', 'area')" aria-label="Ver foto ${escapeHtml(photo.name)}" class="block cursor-zoom-in rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                <img src="${url}" alt="${escapeHtml(photo.name)}" class="h-24 w-28 rounded-lg border border-slate-200 object-cover">
+                            </button>
+                            <figcaption class="truncate pt-1 text-[10px] text-slate-600">${escapeHtml(photo.name)}</figcaption>
+                            <button type="button" onclick="removeRoomPhoto('${photo.id}', '${roomId}')" aria-label="Eliminar foto ${escapeHtml(photo.name)}" ${currentQuote?.id && !canEditCurrentQuote() ? 'disabled' : ''} class="absolute right-1 top-1 rounded-full bg-white/90 px-2 py-1 text-xs text-red-600 shadow">×</button>
+                        </figure>`;
+                }).join('');
+            } catch (error) {
+                console.error(error);
+                const currentContainer = document.getElementById(`room-photos-${roomId}`);
+                if (currentContainer) currentContainer.innerHTML = '<p class="text-xs text-red-600">No se pudieron cargar las fotos de esta área.</p>';
+            }
+        }
+
+        async function renderBudgetPhotoInputs(roomId) {
+            const photos = (await getRoomPhotos(roomId))
+                .filter(photo => photo.purpose === 'budget')
+                .sort((left, right) => (right.createdAt || right.created_at || '').localeCompare(left.createdAt || left.created_at || ''));
+            const currentContainer = document.getElementById(`budget-photos-${roomId}`);
+            if (!currentContainer) return;
+            const slots = [
+                { key: 'actual', label: 'Foto actual del área' },
+                { key: 'proposal', label: 'Propuesta visual con el material' }
+            ];
+            currentContainer.innerHTML = slots.map(slot => {
+                const photo = photos.find(item => item.slot === slot.key);
+                let preview = '';
+                if (photo) {
+                    const url = getPhotoObjectUrl(photo);
+                    preview = `<div class="mt-2 flex items-center gap-3">
+                        <button type="button" onclick="openPhotoViewer('${photo.id}', '${roomId}', 'budget')" aria-label="Ver a tamaño completo ${escapeHtml(slot.label)}" class="cursor-zoom-in rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <img src="${url}" alt="${escapeHtml(slot.label)}" class="h-20 w-24 rounded-lg border border-slate-200 object-cover">
+                        </button>
+                        <button type="button" onclick="removeRoomPhoto('${photo.id}', '${roomId}')" ${currentQuote?.id && !canEditCurrentQuote() ? 'disabled' : ''} class="text-xs font-semibold text-red-600 hover:text-red-700">Quitar foto</button>
+                    </div>`;
+                }
+                return `<div class="min-w-0 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <label for="budget-photo-input-${slot.key}-${roomId}" class="block text-xs font-semibold text-slate-700">${slot.label}</label>
+                    <label for="budget-photo-input-${slot.key}-${roomId}" class="mt-2 inline-flex cursor-pointer items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-bold text-brand-700 border border-slate-200 hover:bg-brand-50">
+                        <i class="fa-solid fa-image"></i>${photo ? 'Cambiar foto' : 'Subir foto'}
+                    </label>
+                    <input id="budget-photo-input-${slot.key}-${roomId}" type="file" accept="image/*" ${slot.key === 'actual' ? 'capture="environment"' : ''} ${currentQuote?.id && !canEditCurrentQuote() ? 'disabled' : ''} class="sr-only" onchange="setBudgetPhoto('${roomId}', '${slot.key}', this.files); this.value = ''">
+                    ${preview}
+                </div>`;
+            }).join('');
+        }
+
+        async function renderAllBudgetPhotoInputs() {
+            await Promise.all(appState.rooms.map(room => renderBudgetPhotoInputs(room.id)));
+        }
+
+        async function setBudgetPhoto(roomId, slot, fileList) {
+            const file = fileList && fileList[0];
+            if (!file) return;
+            if (currentQuote?.id && !canEditCurrentQuote()) {
+                showToast('No tienes permiso para modificar las fotos de esta cotización.', 'error');
+                return;
+            }
+            if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
+                showToast('Usa una imagen JPG, PNG, WebP o HEIC.', 'warning');
+                return;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('Cada imagen debe pesar 10 MB o menos.', 'warning');
+                return;
+            }
+            try {
+                const photos = (await getRoomPhotos(roomId)).filter(photo => photo.purpose === 'budget' && photo.slot === slot);
+                const photo = {
+                    id: createId('photo'),
+                    roomId,
+                    userId: currentUser?.id || '',
+                    quoteId: currentQuote?.id || null,
+                    purpose: 'budget',
+                    slot,
+                    name: file.name || 'Foto para presupuesto',
+                    type: file.type,
+                    blob: file,
+                    createdAt: new Date().toISOString()
+                };
+                await storeRoomPhoto(photo);
+                for (const previous of photos) await deleteRoomPhoto(previous.id);
+                photos.forEach(previous => {
+                    const url = roomPhotoUrls.get(previous.id);
+                    if (url) URL.revokeObjectURL(url);
+                    roomPhotoUrls.delete(previous.id);
+                });
+                await renderBudgetPhotoInputs(roomId);
+                if (!document.getElementById('tab-presupuesto').classList.contains('hidden')) {
+                    await renderPrintPresupuesto();
+                }
+                showToast('Foto guardada para el presupuesto.', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('No se pudo guardar la foto. Revisa el espacio disponible en el dispositivo.', 'error');
+            }
+        }
+
+        async function getBudgetPhotoPair(roomId) {
+            const photos = (await getRoomPhotos(roomId))
+                .filter(photo => photo.purpose === 'budget')
+                .sort((left, right) => (right.createdAt || right.created_at || '').localeCompare(left.createdAt || left.created_at || ''));
+            return {
+                actual: photos.find(photo => photo.slot === 'actual') || null,
+                proposal: photos.find(photo => photo.slot === 'proposal') || null
+            };
+        }
+
+        async function addRoomPhotos(roomId, fileList) {
+            const files = Array.from(fileList || []);
+            if (!files.length) return;
+            if (currentQuote?.id && !canEditCurrentQuote()) {
+                showToast('No tienes permiso para modificar las fotos de esta cotización.', 'error');
+                return;
+            }
+            let savedCount = 0;
+            let invalidCount = 0;
+            let saveError = null;
+            for (const file of files) {
+                if (!['image/jpeg', 'image/png', 'image/webp', 'image/heic'].includes(file.type)) {
+                    invalidCount++;
+                    continue;
+                }
+                if (file.size > 10 * 1024 * 1024) {
+                    invalidCount++;
+                    continue;
+                }
+                try {
+                    await storeRoomPhoto({
+                        id: createId('photo'),
+                        roomId,
+                        userId: currentUser?.id || '',
+                        quoteId: currentQuote?.id || null,
+                        purpose: 'area',
+                        name: file.name || 'Foto del área',
+                        type: file.type,
+                        blob: file,
+                        createdAt: new Date().toISOString()
+                    });
+                    savedCount++;
+                } catch (error) {
+                    console.error(error);
+                    saveError = error;
+                    break;
+                }
+            }
+            await renderRoomPhotos(roomId);
+            if (savedCount) showToast(`${savedCount} foto(s) guardada(s) en esta área.`, 'success');
+            if (invalidCount) showToast('Se omitieron archivos no compatibles o mayores de 10 MB.', 'warning');
+            if (saveError) showToast('No se pudieron guardar todas las fotos. Revisa la conexión o el espacio disponible.', 'error');
+        }
+
+        async function removeRoomPhoto(photoId, roomId) {
+            try {
+                if (currentQuote?.id && !canEditCurrentQuote()) {
+                    showToast('No tienes permiso para eliminar fotos de esta cotización.', 'error');
+                    return;
+                }
+                const photo = (await getRoomPhotos(roomId)).find(item => item.id === photoId);
+                await deleteRoomPhoto(photoId);
+                const url = roomPhotoUrls.get(photoId);
+                if (url) URL.revokeObjectURL(url);
+                roomPhotoUrls.delete(photoId);
+                if (photo?.purpose === 'budget') {
+                    await renderBudgetPhotoInputs(roomId);
+                    if (!document.getElementById('tab-presupuesto').classList.contains('hidden')) {
+                        await renderPrintPresupuesto();
+                    }
+                } else {
+                    await renderRoomPhotos(roomId);
+                }
+            } catch (error) {
+                console.error(error);
+                showToast('No se pudo eliminar la foto.', 'error');
+            }
+        }
+
+        function removeRoom(roomId) {
+            if (appState.rooms.length <= 1) {
+                showToast("El proyecto debe conservar al menos un área.", "warning");
+                return;
+            }
+            appState.rooms = appState.rooms.filter(room => room.id !== roomId);
+            if (appState.activeRoomId === roomId) appState.activeRoomId = appState.rooms[0].id;
+            updateState();
+            deleteRoomPhotos(roomId).catch(error => {
+                console.error(error);
+                showToast('No se pudieron eliminar las fotos del área eliminada.', 'error');
+            });
+        }
+
+        function updateRoomField(roomId, field, value) {
+            const room = appState.rooms.find(item => item.id === roomId);
+            if (!room) return;
+
+            room[field] = field === 'length' || field === 'width' || field === 'wastePct' || field === 'workDuration'
+                ? (value === '' ? '' : Math.max(0, parseFloat(value) || 0))
+                : value;
+            updateState();
+        }
+
+        function updateRoomNotes(roomId, value) {
+            const room = appState.rooms.find(item => item.id === roomId);
+            if (!room) return;
+            room.notes = value.slice(0, 3000);
+            saveToLocalStorage();
+            scheduleCloudSave();
+        }
+
+        function addMaterial(roomId) {
+            const room = appState.rooms.find(item => item.id === roomId);
+            if (!room) return;
+            room.materials.push({ id: createId('material'), sku: '', name: '', pieces: '', yield: '', price: '', discountPct: 0, showInBudget: true });
+            updateState();
+        }
+
+        function removeMaterial(roomId, materialId) {
+            const room = appState.rooms.find(item => item.id === roomId);
+            if (!room) return;
+            room.materials = room.materials.filter(material => material.id !== materialId);
+            updateState();
+        }
+
+        function updateMaterialField(roomId, materialId, field, value) {
+            const room = appState.rooms.find(item => item.id === roomId);
+            const material = room?.materials.find(item => item.id === materialId);
+            if (!material) return;
+            material[field] = field === 'pieces' || field === 'yield' || field === 'price' || field === 'discountPct'
+                ? (value === '' ? '' : Math.min(field === 'discountPct' ? 100 : Number.MAX_VALUE, Math.max(0, parseFloat(value) || 0)))
+                : value;
+            if (field === 'pieces' && material.pieces !== '') material.yield = '';
+            if (field === 'yield' && material.yield !== '') material.pieces = '';
+            updateState();
+        }
+
+        function getRoomCalculation(room) {
+            const length = parseFloat(room.length) || 0;
+            const width = parseFloat(room.width) || 0;
+            const areaNet = length * width;
+            const wastePct = Math.max(0, parseFloat(room.wastePct) || 0);
+            const areaGross = areaNet * (1 + wastePct / 100);
+            const materials = room.materials.map(material => {
+                const yieldPerUnit = parseFloat(material.yield) || 0;
+                const price = parseFloat(material.price) || 0;
+                const hasManualQuantity = material.pieces !== '' && material.pieces !== null && material.pieces !== undefined;
+                const quantity = hasManualQuantity
+                    ? Math.max(0, parseFloat(material.pieces) || 0)
+                    : yieldPerUnit > 0 && areaGross > 0 ? Math.ceil(areaGross / yieldPerUnit) : 0;
+                const grossTotal = quantity * price;
+                const discountPct = Math.min(100, Math.max(0, parseFloat(material.discountPct) || 0));
+                const discountAmount = grossTotal * discountPct / 100;
+                return { ...material, yieldPerUnit, price, quantity, grossTotal, discountPct, discountAmount, total: grossTotal - discountAmount };
+            });
+            return {
+                areaNet,
+                areaGross,
+                materials,
+                subtotal: materials.reduce((sum, material) => sum + material.total, 0)
+            };
+        }
+
+        function getWorkSchedule(room) {
+            if (room.workStartTime || room.workEndTime) {
+                if (room.workStartTime && room.workEndTime) return `${room.workStartTime} a ${room.workEndTime}`;
+                return room.workStartTime || room.workEndTime;
+            }
+            return room.workSchedule || 'No especificado';
+        }
+
+        function renderRooms() {
+            const tabs = document.getElementById('roomTabs');
+            const container = document.getElementById('roomsContainer');
+            if (!tabs || !container) return;
+
+            if (!appState.rooms.some(room => room.id === appState.activeRoomId)) {
+                appState.activeRoomId = appState.rooms[0]?.id || null;
+            }
+
+            tabs.innerHTML = appState.rooms.map((room, index) => {
+                const active = room.id === appState.activeRoomId;
+                const name = room.name.trim() || `Área ${index + 1}`;
+                return `<button type="button" role="tab" aria-selected="${active}" onclick="setActiveRoom('${room.id}')" class="px-4 py-3 text-xs font-semibold border-b-2 whitespace-nowrap ${active ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500 hover:text-slate-800'}">${escapeHtml(name)}</button>`;
+            }).join('');
+
+            const room = appState.rooms.find(item => item.id === appState.activeRoomId);
+            if (!room) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const index = appState.rooms.indexOf(room);
+            const calculation = getRoomCalculation(room);
+            renderBudgetPhotoInputs(room.id).catch(error => {
+                console.error(error);
+                const photoContainer = document.getElementById(`budget-photos-${room.id}`);
+                if (photoContainer) photoContainer.innerHTML = '<p class="text-xs text-red-600">No se pudieron cargar las imágenes para el presupuesto.</p>';
+            });
+            const materialRows = room.materials.length
+                ? room.materials.map((material, materialIndex) => `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_2fr_1fr_1fr_1fr_1fr_1fr_1fr_auto] gap-3 items-end p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                        <div>
+                            <label for="sku-${material.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">SKU</label>
+                            <input id="sku-${material.id}" type="text" value="${escapeHtml(material.sku)}" onchange="updateMaterialField('${room.id}', '${material.id}', 'sku', this.value)" placeholder="Clave del material" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                        </div>
+                        <div>
+                            <label for="material-name-${material.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Nombre material</label>
+                            <input id="material-name-${material.id}" type="text" value="${escapeHtml(material.name)}" onchange="updateMaterialField('${room.id}', '${material.id}', 'name', this.value)" placeholder="Descripción del material" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                        </div>
+                        <div>
+                            <label for="pieces-${material.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">No. de Piezas</label>
+                            <input id="pieces-${material.id}" type="number" min="0" step="0.01" value="${material.pieces ?? ''}" onchange="updateMaterialField('${room.id}', '${material.id}', 'pieces', this.value)" placeholder="Ej. 12 piezas o 2 cajas" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                        </div>
+                        <div>
+                            <label for="yield-${material.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Rendimiento (m² por unidad)</label>
+                            <input id="yield-${material.id}" type="number" min="0" step="0.01" value="${material.yield}" onchange="updateMaterialField('${room.id}', '${material.id}', 'yield', this.value)" placeholder="Ej. 1" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                        </div>
+                        <div>
+                            <label for="calculated-quantity-${material.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Cantidad (unidades)</label>
+                            <input id="calculated-quantity-${material.id}" type="number" value="${calculation.materials[materialIndex].quantity}" readonly aria-readonly="true" class="w-full text-xs p-2.5 bg-slate-100 border border-slate-200 rounded-lg text-slate-600">
+                        </div>
+                        <div>
+                            <label for="price-${material.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Precio (MXN por unidad)</label>
+                            <input id="price-${material.id}" type="number" min="0" step="0.01" value="${material.price}" onchange="updateMaterialField('${room.id}', '${material.id}', 'price', this.value)" placeholder="0.00" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                        </div>
+                        <div>
+                            <label for="discount-${material.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Descuento (%)</label>
+                            <input id="discount-${material.id}" type="number" min="0" max="100" step="0.01" value="${material.discountPct ?? 0}" onchange="updateMaterialField('${room.id}', '${material.id}', 'discountPct', this.value)" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                        </div>
+                        <label for="show-in-budget-${material.id}" class="flex items-center gap-2 pb-2.5 text-[11px] font-semibold text-slate-600">
+                            <input id="show-in-budget-${material.id}" type="checkbox" ${material.showInBudget !== false ? 'checked' : ''} onchange="updateMaterialField('${room.id}', '${material.id}', 'showInBudget', this.checked)" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500">
+                            Mostrar en presupuesto
+                        </label>
+                        <button type="button" onclick="removeMaterial('${room.id}', '${material.id}')" title="Eliminar material" class="px-3 py-2.5 text-slate-400 hover:text-red-500"><i class="fa-solid fa-trash-can"></i><span class="sr-only">Eliminar material</span></button>
+                    </div>
+                `).join('')
+                : '<p class="text-xs text-slate-500 bg-slate-50 border border-dashed border-slate-300 rounded-xl p-4">Agrega los materiales que llevará esta área.</p>';
+
+            container.innerHTML = `
+                <section role="tabpanel" class="bg-white rounded-b-2xl rounded-tr-2xl p-5 shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-brand-50 text-brand-700 font-bold px-2.5 py-1 rounded-lg text-xs">${index + 1}</span>
+                            <label for="areaName-${room.id}" class="sr-only">Nombre del área</label>
+                            <input id="areaName-${room.id}" type="text" value="${escapeHtml(room.name)}" onchange="updateRoomField('${room.id}', 'name', this.value)" placeholder="Nombre real del área (ej. Sala)" class="font-bold text-slate-800 text-base px-2 py-1 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-bold text-slate-500">Subtotal: <span class="text-brand-700">$${formatMXN(calculation.subtotal)} MXN</span></span>
+                            <button type="button" onclick="removeRoom('${room.id}')" class="text-slate-400 hover:text-red-500 p-1" title="Eliminar área"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                        <div>
+                            <label for="length-${room.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Largo (m)</label>
+                            <input id="length-${room.id}" type="number" min="0" step="0.01" value="${room.length}" onchange="updateRoomField('${room.id}', 'length', this.value)" placeholder="0.00" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                        </div>
+                        <div>
+                            <label for="width-${room.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Ancho (m)</label>
+                            <input id="width-${room.id}" type="number" min="0" step="0.01" value="${room.width}" onchange="updateRoomField('${room.id}', 'width', this.value)" placeholder="0.00" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                        </div>
+                        <div>
+                            <label for="waste-${room.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Merma (%)</label>
+                            <input id="waste-${room.id}" type="number" min="0" step="0.1" value="${room.wastePct}" onchange="updateRoomField('${room.id}', 'wastePct', this.value)" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                        </div>
+                        <div class="flex flex-col justify-center">
+                            <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Área calculada</span>
+                            <span class="text-xs font-bold text-slate-800">Neta: ${calculation.areaNet.toFixed(2)} m² | Con merma: ${calculation.areaGross.toFixed(2)} m²</span>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-bold text-slate-700">Materiales del área</h3>
+                            <button type="button" onclick="addMaterial('${room.id}')" class="px-3 py-2 text-xs font-bold text-brand-700 bg-brand-50 hover:bg-brand-100 rounded-lg"><i class="fa-solid fa-plus mr-1"></i>Agregar material</button>
+                        </div>
+                        <p class="text-[11px] text-slate-500">Indica el No. de Piezas o el Rendimiento. La Cantidad (unidades) muestra el dato ingresado o calcula las unidades según el área con merma; solo puedes llenar uno de los dos campos. Desmarca “Mostrar en presupuesto” para agrupar ese importe en Insumos Extras.</p>
+                        <div class="space-y-3">${materialRows}</div>
+                    </div>
+                    <div class="space-y-3 border-t border-slate-200 pt-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-700">Fotos de ${escapeHtml(room.name.trim() || `Área ${index + 1}`)}</h3>
+                                <p class="text-[11px] text-slate-500">Las fotos quedan asociadas a esta área y se sincronizan con la cotización.</p>
+                            </div>
+                            <label for="room-photo-input-${room.id}" class="cursor-pointer rounded-lg bg-brand-50 px-3 py-2 text-xs font-bold text-brand-700 hover:bg-brand-100">
+                                <i class="fa-solid fa-camera mr-1"></i>Tomar o agregar fotos
+                            </label>
+                            <input id="room-photo-input-${room.id}" type="file" accept="image/*" capture="environment" multiple class="sr-only" onchange="addRoomPhotos('${room.id}', this.files); this.value = ''">
+                        </div>
+                        <div id="room-photos-${room.id}" class="flex gap-3 overflow-x-auto py-1"></div>
+                    </div>
+                    <div class="space-y-2 border-t border-slate-200 pt-4">
+                        <div>
+                            <label for="room-notes-${room.id}" class="block text-sm font-bold text-slate-700">Notas e indicaciones de esta área</label>
+                            <p class="mt-1 text-[11px] text-slate-500">Agrega instrucciones y aclaraciones. El técnico asignado y el administrador pueden complementar o actualizar la nota.</p>
+                        </div>
+                        <textarea id="room-notes-${room.id}" rows="4" maxlength="3000" oninput="updateRoomNotes('${room.id}', this.value)" ${currentQuote?.id && !canEditCurrentQuote() ? 'disabled' : ''} placeholder="Ej. El cliente quiere que use Pegamento Blanco y pijas..." class="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-brand-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 disabled:cursor-not-allowed disabled:opacity-70">${escapeHtml(room.notes || '')}</textarea>
+                    </div>
+                    <div class="space-y-3 border-t border-slate-200 pt-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-700">Imágenes para el presupuesto (opcional)</h3>
+                            <p class="text-[11px] text-slate-500">Sube la foto actual y la propuesta visual con el material. Solo se mostrarán en el presupuesto cuando estén las dos.</p>
+                        </div>
+                        <div id="budget-photos-${room.id}" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <p class="text-xs text-slate-500">Cargando imágenes...</p>
+                        </div>
+                    </div>
+                    <div class="space-y-3 border-t border-slate-200 pt-4">
+                        <h3 class="text-sm font-bold text-slate-700">Planeación de obra</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <div>
+                                <label for="work-duration-${room.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Tiempo de Obra (días hábiles)</label>
+                                <input id="work-duration-${room.id}" type="number" min="0" step="0.5" value="${room.workDuration ?? ''}" onchange="updateRoomField('${room.id}', 'workDuration', this.value)" placeholder="Ej. 2 o 4.5" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                            </div>
+                            <div>
+                                <label for="work-start-time-${room.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Horario in situ: Desde</label>
+                                <input id="work-start-time-${room.id}" type="time" value="${escapeHtml(room.workStartTime || '')}" onchange="updateRoomField('${room.id}', 'workStartTime', this.value)" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                            </div>
+                            <div>
+                                <label for="work-end-time-${room.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Horario in situ: Hasta</label>
+                                <input id="work-end-time-${room.id}" type="time" value="${escapeHtml(room.workEndTime || '')}" onchange="updateRoomField('${room.id}', 'workEndTime', this.value)" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                            </div>
+                            <div>
+                                <label for="work-start-date-${room.id}" class="block text-[11px] font-semibold text-slate-600 mb-1">Fecha propuesta de Inicio de Obra</label>
+                                <input id="work-start-date-${room.id}" type="date" value="${escapeHtml(room.workStartDate || '')}" onchange="updateRoomField('${room.id}', 'workStartDate', this.value)" class="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                </section>`;
+            if (currentProfile?.role === 'technician' && !canEditCurrentQuote()) {
+                container.querySelectorAll('input, select, textarea, button').forEach(control => {
+                    control.disabled = true;
+                });
+            }
+            renderRoomPhotos(room.id);
+        }
+
+        function updateState() {
+            appState.client.store = currentProfile?.role === 'seller'
+                ? currentProfile.store
+                : document.getElementById('clientStore').value;
+            appState.client.seller = document.getElementById('sellerName').value;
+            appState.technicianId = currentQuote?.technician_id || '';
+            appState.client.technician = technicianProfiles.find(profile => profile.id === appState.technicianId)?.display_name || '';
+            appState.client.name = document.getElementById('clientName').value;
+            appState.client.phone = document.getElementById('clientPhone').value;
+            appState.client.address = document.getElementById('projectAddress').value;
+            renderRooms();
+            calculateTotals();
+            saveToLocalStorage();
+            scheduleCloudSave();
+        }
+
+        function calculateTotals() {
+            const subtotal = appState.rooms.reduce((sum, room) => sum + getRoomCalculation(room).subtotal, 0);
+
+            document.getElementById('summarySubtotalMXN').innerText = '$' + formatMXN(subtotal);
+            document.getElementById('summaryTotalMXN').innerText = '$' + formatMXN(subtotal) + ' MXN';
+            return { subtotal, total: subtotal };
+        }
+
+        async function renderPrintPresupuesto() {
+            document.getElementById('outClientStore').innerText = appState.client.store || 'No especificada';
+            document.getElementById('outSellerName').innerText = appState.client.seller || 'No especificado';
+            document.getElementById('outTechnicianName').innerText = appState.client.technician || 'No asignado';
+            document.getElementById('outClientName').innerText = appState.client.name || 'Cliente Particular';
+            document.getElementById('outClientPhone').innerText = appState.client.phone ? `Tel / WA: ${appState.client.phone}` : 'Tel: No registrado';
+            document.getElementById('outProjectAddress').innerText = appState.client.address || 'Ubicación no especificada';
+            document.getElementById('outDate').innerText = new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            const container = document.getElementById('outBreakdownContainer');
+            const roomSections = await Promise.all(appState.rooms.map(async (room, index) => {
+                const calculation = getRoomCalculation(room);
+                const photoPair = await getBudgetPhotoPair(room.id);
+                const budgetPhotoMarkup = photoPair.actual && photoPair.proposal ? `
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3">
+                        ${[
+                            { photo: photoPair.actual, label: 'Área actual' },
+                            { photo: photoPair.proposal, label: 'Propuesta visual' }
+                        ].map(({ photo, label }) => {
+                            const url = getPhotoObjectUrl(photo);
+                            return `<figure class="space-y-1">
+                                <figcaption class="text-xs font-bold text-slate-700">${label}</figcaption>
+                                <button type="button" onclick="openPhotoViewer('${photo.id}', '${room.id}', 'budget')" aria-label="Ver a tamaño completo ${label} de ${escapeHtml(room.name.trim() || `Área ${index + 1}`)}" class="block w-full cursor-zoom-in rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500">
+                                    <img src="${url}" alt="${label} - ${escapeHtml(room.name.trim() || `Área ${index + 1}`)}" class="w-full max-h-80 rounded-lg border border-slate-200 object-contain">
+                                </button>
+                            </figure>`;
+                        }).join('')}
+                    </div>` : '';
+                const materialRows = calculation.materials
+                    .filter(material => material.sku || material.name || material.pieces || material.yieldPerUnit || material.price || material.discountPct)
+                    .filter(material => material.showInBudget !== false)
+                    .map(material => `
+                        <tr>
+                            <td class="py-2">
+                                <span class="font-medium">${escapeHtml(material.name || 'Material sin nombre')}</span>
+                                ${material.sku ? `<span class="block text-[10px] text-slate-400">SKU: ${escapeHtml(material.sku)}</span>` : ''}
+                            </td>
+                            <td class="py-2 text-center">${material.yieldPerUnit > 0 ? `${material.yieldPerUnit.toFixed(2)} m²/unid.` : '—'}</td>
+                            <td class="py-2 text-center">${material.quantity} unidad(es)</td>
+                            <td class="py-2 text-right">$${formatMXN(material.price)}</td>
+                            <td class="py-2 text-center">${formatMXN(material.discountPct)}%</td>
+                            <td class="py-2 text-right text-emerald-700">-$${formatMXN(material.discountAmount)}</td>
+                            <td class="py-2 text-right font-medium">$${formatMXN(material.total)}</td>
+                        </tr>
+                    `).join('');
+                const extraMaterials = calculation.materials.filter(material =>
+                    material.showInBudget === false &&
+                    (material.sku || material.name || material.pieces || material.yieldPerUnit || material.price || material.discountPct)
+                );
+                const extraTotal = extraMaterials.reduce((sum, material) => sum + material.total, 0);
+                const extraRow = extraMaterials.length ? `
+                    <tr>
+                        <td class="py-2 font-semibold" colspan="6">Insumos Extras</td>
+                        <td class="py-2 text-right font-semibold">$${formatMXN(extraTotal)}</td>
+                    </tr>` : '';
+                return `
+                    <section class="space-y-2">
+                        <div class="flex justify-between items-center bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold">
+                            <span>${escapeHtml(room.name.trim() || `Área ${index + 1}`)} (Área: ${calculation.areaNet.toFixed(2)} m² + ${parseFloat(room.wastePct) || 0}% merma = ${calculation.areaGross.toFixed(2)} m²)</span>
+                            <span>Subtotal: $${formatMXN(calculation.subtotal)} MXN</span>
+                        </div>
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead><tr class="text-slate-400 border-b border-slate-200 uppercase font-semibold text-[10px]">
+                                <th class="py-1">SKU / Material</th><th class="py-1 text-center">Rendimiento</th><th class="py-1 text-center">Cantidad</th><th class="py-1 text-right">Precio unitario</th><th class="py-1 text-center">Desc. (%)</th><th class="py-1 text-right">Descuento</th><th class="py-1 text-right">Importe</th>
+                            </tr></thead>
+                            <tbody class="divide-y divide-slate-100 text-slate-700">
+                                ${materialRows}${extraRow}${materialRows || extraRow ? '' : '<tr><td colspan="7" class="py-3 text-center text-slate-400">Sin materiales registrados</td></tr>'}
+                            </tbody>
+                        </table>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                            <div><span class="font-semibold">Tiempo de Obra:</span> ${room.workDuration !== '' && room.workDuration != null ? `${escapeHtml(String(room.workDuration))} días hábiles` : 'No especificado'}</div>
+                            <div><span class="font-semibold">Horario de Trabajo in situ:</span> ${escapeHtml(getWorkSchedule(room))}</div>
+                            <div><span class="font-semibold">Fecha propuesta de Inicio de Obra:</span> ${room.workStartDate ? escapeHtml(new Date(`${room.workStartDate}T00:00:00`).toLocaleDateString('es-MX')) : 'No especificada'}</div>
+                        </div>
+                        ${budgetPhotoMarkup}
+                    </section>`;
+            }));
+            container.innerHTML = roomSections.join('');
+
+            const totals = calculateTotals();
+            document.getElementById('outSubtotal').innerText = '$' + formatMXN(totals.subtotal) + ' MXN';
+            document.getElementById('outTotal').innerText = '$' + formatMXN(totals.total) + ' MXN';
+        }
+
+        async function printPresupuesto() {
+            await renderPrintPresupuesto();
+            await Promise.all(Array.from(document.querySelectorAll('#outBreakdownContainer img')).map(image => image.decode().catch(error => {
+                console.error(error);
+            })));
+            window.print();
+        }
+
+        async function copyWhatsAppSummary() {
+            const totals = calculateTotals();
+            let text = `*COTIZACIÓN TEKNOSPAZIO DE RECUBRIMIENTOS*\n`;
+            text += `------------------------------------\n`;
+            text += `🏬 *Tienda:* ${appState.client.store || 'No especificada'}\n`;
+            text += `🧑‍💼 *Vendedor:* ${appState.client.seller || 'No especificado'}\n`;
+            text += `👤 *Cliente:* ${appState.client.name || 'Cliente'}\n`;
+            text += `📍 *Obra:* ${appState.client.address || 'Ubicación no especificada'}\n\n`;
+            text += `*ÁREAS Y MATERIALES:*\n`;
+            appState.rooms.forEach((room, index) => {
+                const calculation = getRoomCalculation(room);
+                text += `${index + 1}. *${room.name.trim() || `Área ${index + 1}`}* (${calculation.areaNet.toFixed(2)} m², merma ${parseFloat(room.wastePct) || 0}%):\n`;
+                text += `   Tiempo de Obra: ${room.workDuration !== '' && room.workDuration != null ? `${room.workDuration} días hábiles` : 'No especificado'}\n`;
+                text += `   Horario de Trabajo in situ: ${getWorkSchedule(room)}\n`;
+                text += `   Fecha propuesta de Inicio de Obra: ${room.workStartDate ? new Date(`${room.workStartDate}T00:00:00`).toLocaleDateString('es-MX') : 'No especificada'}\n`;
+                calculation.materials.filter(material => material.sku || material.name).forEach(material => {
+                    text += `   - ${material.sku ? `${material.sku} ` : ''}${material.name || 'Material'}: ${material.quantity} unidad(es), descuento ${formatMXN(material.discountPct)}% (-$${formatMXN(material.discountAmount)}), importe $${formatMXN(material.total)}\n`;
+                });
+            });
+            text += `\n💰 *Total (IVA incluido):* $${formatMXN(totals.total)} MXN\n`;
+            text += `------------------------------------\nQuedamos a tus órdenes para confirmar tu pedido.`;
+
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    const copied = document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    if (!copied) throw new Error('No fue posible copiar el resumen.');
+                }
+                showToast("Resumen de cotización copiado para WhatsApp", "success");
+            } catch (error) {
+                console.error(error);
+                showToast("No se pudo copiar el resumen de la cotización.", "error");
+            }
+        }
+
+        function saveToLocalStorage() {
+            if (!currentUser || currentQuote?.id || suspendDraftSave) return;
+            try {
+                localStorage.setItem(`teknospazio_draft_${currentUser.id}`, JSON.stringify(appState));
+            } catch (error) {
+                console.error(error);
+                showToast("No se pudo guardar la cotización en este dispositivo.", "error");
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('teknospazio_app_state');
+                if (!saved) return;
+                const parsed = JSON.parse(saved);
+                const oldCatalog = Array.isArray(parsed.catalog) ? parsed.catalog : [];
+                const lookup = id => oldCatalog.find(item => item.id === id);
+                appState.client = { ...appState.client, ...(parsed.client || {}) };
+                appState.client.store = appState.client.store || '';
+                appState.client.seller = appState.client.seller || '';
+                appState.client.technician = appState.client.technician || '';
+                appState.rooms = Array.isArray(parsed.rooms) ? parsed.rooms.map((room, index) => {
+                    let materials = Array.isArray(room.materials) ? room.materials : null;
+                    if (!materials) {
+                        materials = [];
+                        const addLegacyMaterial = (id, yieldPerUnit) => {
+                            const item = lookup(id);
+                            if (item) materials.push({
+                                id: createId('material'),
+                                sku: item.id || '',
+                                name: item.name || '',
+                                yield: yieldPerUnit,
+                                price: item.price || 0
+                            });
+                        };
+                        addLegacyMaterial(room.tileId, 1);
+                        if (room.includeLabor) addLegacyMaterial(room.laborId, 1);
+                        addLegacyMaterial(room.customAdhesiveId || parsed.globalAdhesiveId, 4);
+                        addLegacyMaterial(room.customGroutId || parsed.globalGroutId, 15);
+                    }
+                    return {
+                        id: room.id || createId('area'),
+                        name: room.name === 'Baño Principal' ? '' : (room.name || ''),
+                        length: room.length ?? '',
+                        width: room.width ?? '',
+                        wastePct: Math.max(0, parseFloat(room.wastePct) || 0),
+                        notes: room.notes || '',
+                        workDuration: room.workDuration ?? '',
+                        workSchedule: room.workSchedule || '',
+                        workStartTime: room.workStartTime || '',
+                        workEndTime: room.workEndTime || '',
+                        workStartDate: room.workStartDate || '',
+                        materials: materials.map(material => ({
+                            id: material.id || createId('material'),
+                            sku: material.sku || '',
+                            name: material.name || '',
+                            pieces: material.pieces ?? material.quantity ?? '',
+                            yield: material.yield ?? '',
+                            price: material.price ?? '',
+                            discountPct: Math.min(100, Math.max(0, parseFloat(material.discountPct) || 0)),
+                            showInBudget: material.showInBudget !== false
+                        }))
+                    };
+                }) : [];
+                appState.activeRoomId = parsed.activeRoomId || appState.rooms[0]?.id || null;
+                document.getElementById('clientStore').value = appState.client.store;
+                document.getElementById('sellerName').value = appState.client.seller;
+                document.getElementById('technicianName').value = appState.client.technician;
+                document.getElementById('clientName').value = appState.client.name || '';
+                document.getElementById('clientPhone').value = appState.client.phone || '';
+                document.getElementById('projectAddress').value = appState.client.address || '';
+                appState.rooms.forEach(room => renderRoomPhotos(room.id));
+            } catch (error) {
+                console.error(error);
+                showToast("No se pudo recuperar la cotización guardada.", "error");
+            }
+        }
+
+        function clearAllData() {
+            if (!confirm("¿Deseas reiniciar la cotización actual? Se eliminarán los datos del cliente, áreas y materiales.")) return;
+            appState = {
+                client: { store: '', seller: '', name: '', phone: '', address: '' },
+                activeRoomId: null,
+                rooms: []
+            };
+            document.getElementById('clientStore').value = '';
+            document.getElementById('sellerName').value = '';
+            document.getElementById('technicianName').value = '';
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientPhone').value = '';
+            document.getElementById('projectAddress').value = '';
+            addRoom();
+            showToast("Cotización reiniciada.", "info");
+        }
+    </script>
+</body>
+</html>
