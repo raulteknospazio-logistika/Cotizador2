@@ -192,57 +192,66 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
       {/* Printable Sheet */}
       <div
         id="printSheet"
-        className="bg-white p-6 sm:p-10 md:p-12 rounded-2xl shadow-xl border border-slate-200 print-container max-w-4xl mx-auto space-y-8 text-slate-800"
+        className="bg-white p-4 sm:p-8 md:p-10 rounded-2xl shadow-xl border border-slate-200 print-container max-w-4xl mx-auto space-y-6 sm:space-y-7 text-slate-800"
       >
         {/* Header Presupuesto */}
-        <div className="flex justify-between items-start border-b border-slate-200 pb-6">
-          <div className="space-y-1">
+        <div className="flex flex-col sm:flex-row print:flex-row justify-between items-start gap-4 border-b border-slate-200 pb-5">
+          <div className="space-y-1.5">
             <div className="flex items-center gap-3">
+              {/* Screen Logo (white on dark pill) */}
               <img
                 src="/assets/aistudio/logo-Tekno-Spazio-blanco-png_e3d30b93.png"
                 alt="Teknospazio"
-                className="w-44 h-auto bg-slate-950 p-2 rounded-lg"
+                className="w-44 sm:w-48 h-auto bg-slate-950 p-2 rounded-lg print:hidden"
+              />
+              {/* Print/PDF Logo (crisp black on white paper) */}
+              <img
+                src="/assets/aistudio/logo-Tekno-Spazio-negro.png"
+                alt="Teknospazio"
+                className="hidden print:block w-52 h-auto"
               />
             </div>
-            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider pt-1">
+            <p className="text-xs sm:text-sm print:text-xs font-bold text-slate-700 uppercase tracking-wider pt-0.5">
               Recubrimientos & Diseño de Espacios
             </p>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-[11px] sm:text-xs print:text-xs text-slate-500">
               RFC: TEK-080912-K32 | Ventas y Proyectos Especiales
             </p>
           </div>
 
-          <div className="text-right space-y-1">
-            <span className="inline-block bg-teal-50 text-teal-800 font-bold px-3 py-1 rounded-full text-xs border border-teal-200">
+          <div className="sm:text-right print:text-right space-y-1">
+            <span className="inline-block bg-teal-50 text-teal-800 font-bold px-3 py-1 rounded-full text-xs print:text-xs border border-teal-200">
               PRESUPUESTO FORMAL
             </span>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs sm:text-sm print:text-[13px] text-slate-600">
               Folio:{' '}
               <span className="font-bold text-slate-900">{quote.folio || 'TK-2026-001'}</span>
             </div>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs sm:text-sm print:text-[13px] text-slate-600">
               Fecha: <span className="font-medium text-slate-800">{currentDateStr}</span>
             </div>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs sm:text-sm print:text-[13px] text-slate-600">
               Vigencia: <span className="font-medium text-slate-800">15 días naturales</span>
             </div>
           </div>
         </div>
 
         {/* Client & Work Info */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 print:grid-cols-3 gap-3.5 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs sm:text-sm print:text-[13px] print-avoid-break">
           <div>
-            <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px] print:text-[11px] block mb-1">
               Cliente / Atención a:
             </span>
-            <div className="font-bold text-slate-800 text-sm">
+            <div className="font-bold text-slate-900 text-sm sm:text-base print:text-[14px]">
               {quote.client_name || 'Cliente Particular'}
             </div>
-            <div className="text-slate-500">{quote.client_phone ? `Tel: ${quote.client_phone}` : 'Tel: No registrado'}</div>
+            <div className="text-slate-600">
+              {quote.client_phone ? `Tel: ${quote.client_phone}` : 'Tel: No registrado'}
+            </div>
           </div>
 
           <div>
-            <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px] print:text-[11px] block mb-1">
               Ubicación de la Obra:
             </span>
             <div className="font-medium text-slate-800">
@@ -251,14 +260,14 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
           </div>
 
           <div>
-            <span className="font-bold text-slate-400 uppercase tracking-wider block mb-1">
+            <span className="font-bold text-slate-500 uppercase tracking-wider text-[10px] print:text-[11px] block mb-1">
               Tienda y Atención:
             </span>
             <div className="font-medium text-slate-800">
               {quote.store} · {quote.seller_name || 'Vendedor'}
             </div>
             {quote.technician_name && (
-              <div className="text-indigo-600 font-medium">Técnico: {quote.technician_name}</div>
+              <div className="text-indigo-700 font-semibold">Técnico: {quote.technician_name}</div>
             )}
           </div>
         </div>
@@ -266,58 +275,60 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
         {/* Breakdown tables per room */}
         <div className="space-y-6">
           {roomsCalculated.map(({ room, idx, l, w, waste, areaNet, areaGross, materialsCalc, roomSubtotal }) => (
-            <div key={room.id} className="space-y-2">
-              <div className="flex flex-wrap justify-between items-center gap-2 bg-slate-900 text-white px-3.5 py-2 rounded-xl text-xs font-bold">
+            <div key={room.id} className="space-y-2.5 print-avoid-break">
+              <div className="flex flex-wrap justify-between items-center gap-2 bg-slate-900 text-white print:bg-slate-100 print:text-slate-900 print:border print:border-slate-300 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm print:text-[14px] font-bold">
                 <span>
-                  #{idx + 1}. {room.name || `Área ${idx + 1}`} (
+                  #{idx + 1}. {room.name?.trim() || `Área ${idx + 1}`} (
                   {formatAreaNum(l)} x {formatAreaNum(w)} = {formatAreaNum(areaNet)} m² útiles +{' '}
                   {formatAreaNum(waste)}% merma = {formatAreaNum(areaGross)} m²)
                 </span>
                 <span>Subtotal: ${formatMXN(roomSubtotal)} MXN</span>
               </div>
 
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="text-slate-400 border-b border-slate-200 uppercase font-semibold text-[10px]">
-                    <th className="py-1.5 pl-1">SKU / Material</th>
-                    <th className="py-1.5 text-center">Cant. / Unid</th>
-                    <th className="py-1.5 text-right">Precio Unit</th>
-                    <th className="py-1.5 text-center">Desc. %</th>
-                    <th className="py-1.5 text-right pr-1">Importe Net</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-slate-700">
-                  {materialsCalc.map((m) => (
-                    <tr key={m.id}>
-                      <td className="py-2 pl-1">
-                        <span className="font-semibold text-slate-800">{m.name || 'Material'}</span>
-                        {m.sku && (
-                          <span className="block text-[10px] text-slate-400 font-mono">
-                            SKU: {m.sku}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-2 text-center font-medium">{m.qty}</td>
-                      <td className="py-2 text-right">
-                        ${formatMXN(typeof m.price === 'number' ? m.price : 0)}
-                      </td>
-                      <td className="py-2 text-center text-emerald-700 font-bold">
-                        {m.discountPct > 0 ? `${m.discountPct}%` : '-'}
-                      </td>
-                      <td className="py-2 text-right font-bold text-slate-900 pr-1">
-                        ${formatMXN(m.netTotal)}
-                      </td>
+              <div className="overflow-x-auto print:overflow-visible">
+                <table className="w-full text-left text-xs sm:text-sm print:text-[13.5px] border-collapse">
+                  <thead>
+                    <tr className="text-slate-500 border-b border-slate-200 uppercase font-bold text-[10px] sm:text-xs print:text-[11.5px]">
+                      <th className="py-2 pl-1">SKU / Material</th>
+                      <th className="py-2 text-center">Cant.</th>
+                      <th className="py-2 text-right">Precio Unit</th>
+                      <th className="py-2 text-center">Desc.</th>
+                      <th className="py-2 text-right pr-1">Importe Net</th>
                     </tr>
-                  ))}
-                  {materialsCalc.length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="py-3 text-center text-slate-400">
-                        Sin materiales registrados en esta área
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-slate-700">
+                    {materialsCalc.map((m) => (
+                      <tr key={m.id}>
+                        <td className="py-2.5 pl-1 pr-2">
+                          <span className="font-semibold text-slate-900">{m.name || 'Material'}</span>
+                          {m.sku && (
+                            <span className="block text-[11px] print:text-[11.5px] text-slate-500 font-mono">
+                              SKU: {m.sku}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 text-center font-semibold text-slate-800">{m.qty}</td>
+                        <td className="py-2.5 text-right whitespace-nowrap">
+                          ${formatMXN(typeof m.price === 'number' ? m.price : 0)}
+                        </td>
+                        <td className="py-2.5 text-center text-emerald-700 font-bold">
+                          {m.discountPct > 0 ? `${m.discountPct}%` : '-'}
+                        </td>
+                        <td className="py-2.5 text-right font-bold text-slate-900 pr-1 whitespace-nowrap">
+                          ${formatMXN(m.netTotal)}
+                        </td>
+                      </tr>
+                    ))}
+                    {materialsCalc.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-3 text-center text-slate-400">
+                          Sin materiales registrados en esta área
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
               {/* Work Planning Badge (only shown if user set work times/dates) */}
               {(() => {
@@ -334,16 +345,16 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
                 if (!hasDuration && !hasSchedule && !hasStartDate) return null;
 
                 return (
-                  <div className="flex flex-wrap gap-x-6 gap-y-1.5 rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-[11px] text-slate-600">
+                  <div className="flex flex-wrap gap-x-6 gap-y-1.5 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs print:text-[13px] text-slate-700">
                     {hasDuration && (
                       <div>
-                        <span className="font-bold text-slate-700">Tiempo de Obra:</span>{' '}
+                        <span className="font-bold text-slate-800">Tiempo de Obra:</span>{' '}
                         {room.workDuration} días hábiles
                       </div>
                     )}
                     {hasSchedule && (
                       <div>
-                        <span className="font-bold text-slate-700">Horario in situ:</span>{' '}
+                        <span className="font-bold text-slate-800">Horario in situ:</span>{' '}
                         {hasStartTime && hasEndTime
                           ? `${room.workStartTime} a ${room.workEndTime}`
                           : hasStartTime
@@ -353,7 +364,7 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
                     )}
                     {hasStartDate && (
                       <div>
-                        <span className="font-bold text-slate-700">Inicio de Obra:</span>{' '}
+                        <span className="font-bold text-slate-800">Inicio de Obra:</span>{' '}
                         {new Date(`${room.workStartDate}T00:00:00`).toLocaleDateString('es-MX')}
                       </div>
                     )}
@@ -365,13 +376,13 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
         </div>
 
         {/* Totals Section */}
-        <div className="flex justify-end pt-4 border-t border-slate-200">
-          <div className="w-full sm:w-80 space-y-2 text-xs">
+        <div className="flex justify-end pt-4 border-t border-slate-200 print-avoid-break">
+          <div className="w-full sm:w-96 space-y-2 text-xs sm:text-sm print:text-[14px]">
             <div className="flex justify-between text-slate-600">
               <span>Subtotal (descuentos aplicados):</span>
               <span className="font-semibold">${formatMXN(grandTotal)} MXN</span>
             </div>
-            <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-300">
+            <div className="flex justify-between text-base sm:text-lg print:text-[19px] font-black text-slate-900 pt-2 border-t border-slate-300">
               <span>TOTAL (IVA INCLUIDO):</span>
               <span className="text-teal-700">${formatMXN(grandTotal)} MXN</span>
             </div>
@@ -381,7 +392,7 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
         {/* Material Descriptions per Area (First Material of Each Area) */}
         {areasWithDescription.length > 0 && (
           <div className="space-y-3 border-t border-slate-200 pt-5">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+            <h3 className="text-xs sm:text-sm print:text-[13.5px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 break-after-avoid">
               <i className="fa-solid fa-align-left text-teal-600"></i> Descripción de Materiales por
               Área
             </h3>
@@ -398,20 +409,20 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
                 }) => (
                   <div
                     key={`desc-${room.id}`}
-                    className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 flex flex-col sm:flex-row gap-4 items-start"
+                    className="rounded-xl border border-slate-200 bg-slate-50/80 p-3.5 sm:p-4 flex flex-col sm:flex-row print:flex-row gap-4 items-start print-avoid-break"
                   >
                     {firstMaterialPhotoUrl && (
                       <img
                         src={firstMaterialPhotoUrl}
                         alt={firstMaterialName || `Material de ${room.name || `Área ${idx + 1}`}`}
-                        className="w-24 h-24 sm:w-28 sm:h-28 object-cover rounded-xl border border-slate-200 bg-white shrink-0 shadow-2xs"
+                        className="w-24 h-24 sm:w-28 sm:h-28 print:w-28 print:h-28 object-cover rounded-xl border border-slate-200 bg-white shrink-0 shadow-2xs"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).style.display = 'none';
                         }}
                       />
                     )}
                     <div className="flex-1 min-w-0 space-y-1.5">
-                      <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-900">
+                      <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm print:text-[14px] font-bold text-slate-900">
                         <span className="text-teal-700">
                           #{idx + 1}. {room.name?.trim() || `Área ${idx + 1}`}
                         </span>
@@ -419,13 +430,13 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
                           <span className="text-slate-700 font-semibold">— {firstMaterialName}</span>
                         )}
                         {firstMaterialSku && (
-                          <span className="text-[10px] font-mono font-normal text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                          <span className="text-[11px] font-mono font-normal text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
                             SKU: {firstMaterialSku}
                           </span>
                         )}
                       </div>
                       {firstMaterialDescription && (
-                        <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+                        <p className="text-xs sm:text-sm print:text-[13.5px] text-slate-700 leading-relaxed whitespace-pre-line">
                           {firstMaterialDescription}
                         </p>
                       )}
@@ -435,7 +446,7 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
                             href={firstMaterialProductUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-[11px] font-medium text-teal-700 hover:text-teal-900 underline break-all"
+                            className="inline-flex items-center gap-1.5 text-xs print:text-[12.5px] font-medium text-teal-700 hover:text-teal-900 underline break-all"
                           >
                             <i className="fa-solid fa-arrow-up-right-from-square text-[10px] shrink-0"></i>
                             <span>{firstMaterialProductUrl}</span>
@@ -451,52 +462,64 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
         )}
 
         {/* Value Proposition Cards */}
-        <section className="space-y-5 border-t border-slate-200 pt-7">
+        <section className="space-y-4 border-t border-slate-200 pt-6 print-avoid-break">
           <div className="text-center">
-            <h2 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+            <h2 className="text-base sm:text-lg print:text-[17px] font-bold tracking-tight text-slate-900">
               ¿Por qué elegir Teknospazio para sus recubrimientos?
             </h2>
             <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-amber-500"></div>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <article className="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-3.5 text-center shadow-xs">
-              <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-2xs">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 print:grid-cols-1 print:gap-2.5">
+            <article className="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-3.5 text-center print:flex print:items-center print:gap-3 print:text-left print:p-3 shadow-xs">
+              <div className="mx-auto mb-2 print:mx-0 print:mb-0 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-2xs">
                 <i className="fa-solid fa-award text-sm"></i>
               </div>
-              <h3 className="mb-1 text-xs font-bold text-slate-900">PROFESIONALES CAPACITADOS</h3>
-              <p className="text-[11px] leading-relaxed text-slate-600">
-                Personal técnico capacitado para realizar la instalación con atención al detalle y
-                control de calidad.
-              </p>
+              <div>
+                <h3 className="mb-1 print:mb-0.5 text-xs print:text-[13px] font-bold text-slate-900">
+                  PROFESIONALES CAPACITADOS
+                </h3>
+                <p className="text-[11px] sm:text-xs print:text-[12.5px] leading-relaxed text-slate-600">
+                  Personal técnico capacitado para realizar la instalación con atención al detalle y
+                  control de calidad.
+                </p>
+              </div>
             </article>
 
-            <article className="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-3.5 text-center shadow-xs">
-              <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-2xs">
+            <article className="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-3.5 text-center print:flex print:items-center print:gap-3 print:text-left print:p-3 shadow-xs">
+              <div className="mx-auto mb-2 print:mx-0 print:mb-0 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-2xs">
                 <i className="fa-regular fa-calendar-check text-sm"></i>
               </div>
-              <h3 className="mb-1 text-xs font-bold text-slate-900">PLANEACIÓN DE OBRA</h3>
-              <p className="text-[11px] leading-relaxed text-slate-600">
-                Definimos tiempos y horario de trabajo para organizar el proyecto desde el inicio.
-              </p>
+              <div>
+                <h3 className="mb-1 print:mb-0.5 text-xs print:text-[13px] font-bold text-slate-900">
+                  PLANEACIÓN DE OBRA
+                </h3>
+                <p className="text-[11px] sm:text-xs print:text-[12.5px] leading-relaxed text-slate-600">
+                  Definimos tiempos y horario de trabajo para organizar el proyecto desde el inicio.
+                </p>
+              </div>
             </article>
 
-            <article className="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-3.5 text-center shadow-xs">
-              <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-2xs">
+            <article className="budget-benefit-card rounded-xl border border-amber-100 bg-amber-50/50 p-3.5 text-center print:flex print:items-center print:gap-3 print:text-left print:p-3 shadow-xs">
+              <div className="mx-auto mb-2 print:mx-0 print:mb-0 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber-100 bg-white text-amber-700 shadow-2xs">
                 <i className="fa-solid fa-scale-balanced text-sm"></i>
               </div>
-              <h3 className="mb-1 text-xs font-bold text-slate-900">VALOR PARA SU INVERSIÓN</h3>
-              <p className="text-[11px] leading-relaxed text-slate-600">
-                Una propuesta clara con materiales y cantidades definidos para ayudarle a decidir
-                con confianza.
-              </p>
+              <div>
+                <h3 className="mb-1 print:mb-0.5 text-xs print:text-[13px] font-bold text-slate-900">
+                  VALOR PARA SU INVERSIÓN
+                </h3>
+                <p className="text-[11px] sm:text-xs print:text-[12.5px] leading-relaxed text-slate-600">
+                  Una propuesta clara con materiales y cantidades definidos para ayudarle a decidir
+                  con confianza.
+                </p>
+              </div>
             </article>
           </div>
 
           <div className="border-t border-amber-100 pt-3 text-center">
-            <p className="text-xs font-semibold text-slate-800">
+            <p className="text-xs sm:text-sm print:text-[13px] font-semibold text-slate-800">
               Una marca de confianza en recubrimientos arquitectónicos.
             </p>
-            <div className="mt-1 flex flex-wrap justify-center gap-x-5 gap-y-1 text-[11px] text-slate-500">
+            <div className="mt-1 flex flex-wrap justify-center gap-x-5 gap-y-1 text-[11px] sm:text-xs print:text-[12.5px] text-slate-600">
               <span>
                 <i className="fa-solid fa-globe mr-1 text-amber-700"></i>teknospazio.com
               </span>
@@ -511,8 +534,8 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
         </section>
 
         {/* Terms & Conditions */}
-        <div className="border-t border-slate-200 pt-5 text-[11px] text-slate-400 space-y-1">
-          <p className="font-bold text-slate-600 uppercase">Términos y Condiciones:</p>
+        <div className="border-t border-slate-200 pt-5 text-xs print:text-[12px] text-slate-500 print:text-slate-700 space-y-1.5 leading-relaxed print-avoid-break">
+          <p className="font-bold text-slate-700 uppercase">Términos y Condiciones:</p>
           <p>
             • Todos los montos de esta cotización ya incluyen IVA; no se agrega un importe adicional
             por este concepto.
