@@ -33,7 +33,6 @@ interface TabQuotationProps {
   ) => void;
   onRemoveBudgetPhoto: (roomId: string, slot: 'actual' | 'proposal') => void;
   onOpenPhotoViewer: (photoUrl: string, title: string) => void;
-  onGoToPresupuesto: () => void;
 }
 
 export const TabQuotation: React.FC<TabQuotationProps> = ({
@@ -54,7 +53,6 @@ export const TabQuotation: React.FC<TabQuotationProps> = ({
   onSetBudgetPhoto,
   onRemoveBudgetPhoto,
   onOpenPhotoViewer,
-  onGoToPresupuesto,
 }) => {
   const [showCatalogModal, setShowCatalogModal] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
@@ -992,16 +990,6 @@ export const TabQuotation: React.FC<TabQuotationProps> = ({
               </div>
             )}
           </div>
-        </div>
-        <div>
-          {!isTechnician && (
-            <button
-              onClick={onGoToPresupuesto}
-              className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-bold rounded-xl shadow-lg text-xs sm:text-sm flex items-center justify-center gap-2 transition"
-            >
-              <i className="fa-solid fa-file-invoice"></i> Generar Presupuesto Cliente
-            </button>
-          )}
         </div>
       </div>
 

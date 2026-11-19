@@ -1002,7 +1002,6 @@ export default function App() {
               onSetBudgetPhoto={handleSetBudgetPhoto}
               onRemoveBudgetPhoto={handleRemoveBudgetPhoto}
               onOpenPhotoViewer={(url, title) => setViewerPhoto({ url, title })}
-              onGoToPresupuesto={() => setActiveTab('presupuesto')}
             />
           )}
 
