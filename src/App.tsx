@@ -187,7 +187,7 @@ export default function App() {
   }, [user?.id]);
 
   // Persist Catalog changes (local + Supabase)
-  const handleUpdateCatalog = async (newCatalog: CatalogItem[]) => {
+  const handleUpdateCatalog = async (newCatalog: CatalogItem[], changedItems?: CatalogItem[]) => {
     const previousCatalog = catalog;
     setCatalog(newCatalog);
     saveStoredCatalog(newCatalog);
@@ -200,7 +200,13 @@ export default function App() {
         for (const removed of removedItems) {
           await deleteCloudCatalogItem(removed.id);
         }
-        await upsertCloudCatalog(newCatalog);
+        if (changedItems) {
+          if (changedItems.length > 0) {
+            await upsertCloudCatalog(changedItems);
+          }
+        } else {
+          await upsertCloudCatalog(newCatalog);
+        }
       }
     }
   };
@@ -440,14 +446,63 @@ export default function App() {
     persistQuoteChange(updated, false);
   };
 
+  // Helper to read & compress uploaded image files to keep localStorage & Supabase fast
+  const readImageAsOptimizedDataUrl = (file: File): Promise<string | null> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const rawUrl = e.target?.result as string;
+        if (!rawUrl) {
+          resolve(null);
+          return;
+        }
+        if (file.size <= 250 * 1024) {
+          resolve(rawUrl);
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const maxDim = 1280;
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width >= height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+              resolve(rawUrl);
+              return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            const compressed = canvas.toDataURL('image/jpeg', 0.82);
+            resolve(compressed || rawUrl);
+          } catch {
+            resolve(rawUrl);
+          }
+        };
+        img.onerror = () => resolve(rawUrl);
+        img.src = rawUrl;
+      };
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(file);
+    });
+  };
+
   // Photo Management
   const handleAddRoomPhoto = (roomId: string, files: FileList) => {
     if (!currentQuote) return;
     const fileArray = Array.from(files);
     fileArray.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const url = e.target?.result as string;
+      void readImageAsOptimizedDataUrl(file).then((url) => {
         if (!url) return;
 
         const photoObj = {
@@ -470,8 +525,7 @@ export default function App() {
           Promise.resolve().then(() => persistQuoteChange(nextQuote, true));
           return nextQuote;
         });
-      };
-      reader.readAsDataURL(file);
+      });
     });
     showToast(`${fileArray.length} foto(s) agregada(s).`, 'success');
   };
@@ -489,38 +543,56 @@ export default function App() {
     persistQuoteChange(updated, true);
   };
 
-  const handleSetBudgetPhoto = (roomId: string, slot: 'actual' | 'proposal', file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const url = e.target?.result as string;
-      if (!url) return;
-
-      const photoObj = {
-        id: createUniqueId('budget_pic'),
-        roomId,
-        slot,
-        name: file.name,
-        url,
-        createdAt: new Date().toISOString(),
-      };
-
-      setCurrentQuote((prev) => {
-        if (!prev) return null;
-        const updatedRooms = prev.rooms.map((r) => {
-          if (r.id === roomId) {
-            const currentBudget = r.budgetPhotos || {};
-            return { ...r, budgetPhotos: { ...currentBudget, [slot]: photoObj } };
-          }
-          return r;
-        });
-
-        const updated = { ...prev, rooms: updatedRooms };
-        Promise.resolve().then(() => persistQuoteChange(updated, true));
-        return updated;
-      });
-      showToast('Imagen para presupuesto actualizada.', 'success');
+  const applyBudgetPhoto = (
+    roomId: string,
+    slot: 'actual' | 'proposal',
+    name: string,
+    url: string
+  ) => {
+    const photoObj = {
+      id: createUniqueId('budget_pic'),
+      roomId,
+      slot,
+      name,
+      url,
+      createdAt: new Date().toISOString(),
     };
-    reader.readAsDataURL(file);
+
+    setCurrentQuote((prev) => {
+      if (!prev) return null;
+      const updatedRooms = prev.rooms.map((r) => {
+        if (r.id === roomId) {
+          const currentBudget = r.budgetPhotos || {};
+          return { ...r, budgetPhotos: { ...currentBudget, [slot]: photoObj } };
+        }
+        return r;
+      });
+
+      const updated = { ...prev, rooms: updatedRooms };
+      Promise.resolve().then(() => persistQuoteChange(updated, true));
+      return updated;
+    });
+    showToast(
+      slot === 'actual'
+        ? 'Foto "Antes" cargada para el presupuesto.'
+        : 'Foto "Después" cargada para el presupuesto.',
+      'success'
+    );
+  };
+
+  const handleSetBudgetPhoto = (
+    roomId: string,
+    slot: 'actual' | 'proposal',
+    source: File | { name: string; url: string }
+  ) => {
+    if (source instanceof File) {
+      void readImageAsOptimizedDataUrl(source).then((url) => {
+        if (!url) return;
+        applyBudgetPhoto(roomId, slot, source.name, url);
+      });
+    } else if (source?.url) {
+      applyBudgetPhoto(roomId, slot, source.name || 'Foto de Levantamiento', source.url);
+    }
   };
 
   const handleRemoveBudgetPhoto = (roomId: string, slot: 'actual' | 'proposal') => {

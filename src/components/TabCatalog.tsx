@@ -9,7 +9,7 @@ import {
 
 interface TabCatalogProps {
   catalog: CatalogItem[];
-  onUpdateCatalog: (newCatalog: CatalogItem[]) => void;
+  onUpdateCatalog: (newCatalog: CatalogItem[], changedItems?: CatalogItem[]) => void;
   onShowToast: (message: string, type?: 'success' | 'info' | 'warning' | 'error') => void;
 }
 
@@ -41,6 +41,27 @@ export const TabCatalog: React.FC<TabCatalogProps> = ({
   const [newThickness, setNewThickness] = useState('');
   const [newWeightKg, setNewWeightKg] = useState('');
   const [newWarranty, setNewWarranty] = useState('');
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
+  const [newProductUrl, setNewProductUrl] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+
+  // Edit product modal state
+  const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
+  const [editSku, setEditSku] = useState('');
+  const [editName, setEditName] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editRegularPrice, setEditRegularPrice] = useState<number | ''>('');
+  const [editDiscountPrice, setEditDiscountPrice] = useState<number | ''>('');
+  const [editYield, setEditYield] = useState('');
+  const [editPiecesPerBox, setEditPiecesPerBox] = useState('');
+  const [editLength, setEditLength] = useState('');
+  const [editWidth, setEditWidth] = useState('');
+  const [editThickness, setEditThickness] = useState('');
+  const [editWeightKg, setEditWeightKg] = useState('');
+  const [editWarranty, setEditWarranty] = useState('');
+  const [editPhotoUrl, setEditPhotoUrl] = useState('');
+  const [editProductUrl, setEditProductUrl] = useState('');
+  const [editDescription, setEditDescription] = useState('');
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -85,7 +106,10 @@ export const TabCatalog: React.FC<TabCatalogProps> = ({
     const discountNum = typeof newDiscountPrice === 'number' ? newDiscountPrice : 0;
     const regularNum = typeof newRegularPrice === 'number' ? newRegularPrice : discountNum;
 
+    const existing = catalog.find((c) => c.id.toUpperCase() === cleanSku);
+
     const item: CatalogItem = {
+      ...(existing || {}),
       id: cleanSku,
       sku: cleanSku,
       name: newName.trim(),
@@ -100,16 +124,18 @@ export const TabCatalog: React.FC<TabCatalogProps> = ({
       thickness: newThickness.trim() || undefined,
       weightKg: newWeightKg.trim() || undefined,
       warranty: newWarranty.trim() || undefined,
+      photoUrl: newPhotoUrl.trim() || undefined,
+      productUrl: newProductUrl.trim() || undefined,
+      description: newDescription.trim() || undefined,
       unit: parsedYield !== '' ? 'caja' : newPiecesPerBox.trim() === '1' ? 'pieza' : 'unidad',
     };
 
-    const existingIdx = catalog.findIndex((c) => c.id.toUpperCase() === cleanSku);
-    if (existingIdx >= 0) {
-      const updated = catalog.map((c, idx) => (idx === existingIdx ? item : c));
-      onUpdateCatalog(updated);
+    if (existing) {
+      const updated = catalog.map((c) => (c.id.toUpperCase() === cleanSku ? item : c));
+      onUpdateCatalog(updated, [item]);
       onShowToast(`SKU ${cleanSku} actualizado en el catálogo.`, 'success');
     } else {
-      onUpdateCatalog([item, ...catalog]);
+      onUpdateCatalog([item, ...catalog], [item]);
       onShowToast(`Producto ${cleanSku} agregado al catálogo.`, 'success');
     }
 
@@ -125,7 +151,88 @@ export const TabCatalog: React.FC<TabCatalogProps> = ({
     setNewThickness('');
     setNewWeightKg('');
     setNewWarranty('');
+    setNewPhotoUrl('');
+    setNewProductUrl('');
+    setNewDescription('');
     setShowAddForm(false);
+  };
+
+  const handleStartEdit = (item: CatalogItem) => {
+    setEditingItem(item);
+    setEditSku(item.sku || item.id);
+    setEditName(item.name || '');
+    setEditCategory(item.category || '');
+    setEditRegularPrice(typeof item.regularPrice === 'number' ? item.regularPrice : item.price);
+    setEditDiscountPrice(typeof item.price === 'number' ? item.price : '');
+    setEditYield(
+      item.yieldRaw || (typeof item.yieldPerM2 === 'number' ? String(item.yieldPerM2) : '')
+    );
+    setEditPiecesPerBox(item.piecesPerBox || '');
+    setEditLength(item.length || '');
+    setEditWidth(item.width || '');
+    setEditThickness(item.thickness || '');
+    setEditWeightKg(item.weightKg || '');
+    setEditWarranty(item.warranty || '');
+    setEditPhotoUrl(item.photoUrl || '');
+    setEditProductUrl(item.productUrl || '');
+    setEditDescription(item.description || '');
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem) return;
+    if (!editSku.trim() || !editName.trim() || editDiscountPrice === '') {
+      onShowToast('Completa al menos SKU, Nombre del Producto y Precio Descuento (MXN).', 'warning');
+      return;
+    }
+
+    const nextSku = editSku.trim().toUpperCase();
+    const isRenaming = nextSku !== editingItem.id.toUpperCase();
+    if (isRenaming && catalog.some((c) => c.id.toUpperCase() === nextSku)) {
+      onShowToast(`Ya existe otro producto con el SKU ${nextSku}.`, 'warning');
+      return;
+    }
+
+    const parsedYield = parseYieldPerM2(editYield);
+    const discountNum = typeof editDiscountPrice === 'number' ? editDiscountPrice : 0;
+    const regularNum = typeof editRegularPrice === 'number' ? editRegularPrice : discountNum;
+
+    const updatedItem: CatalogItem = {
+      ...editingItem,
+      id: isRenaming ? nextSku : editingItem.id,
+      sku: nextSku,
+      name: editName.trim(),
+      category: editCategory.trim() || 'General',
+      regularPrice: regularNum,
+      price: discountNum,
+      yieldPerM2: parsedYield,
+      yieldRaw: editYield.trim() || undefined,
+      piecesPerBox: editPiecesPerBox.trim() || undefined,
+      length: editLength.trim() || undefined,
+      width: editWidth.trim() || undefined,
+      thickness: editThickness.trim() || undefined,
+      weightKg: editWeightKg.trim() || undefined,
+      warranty: editWarranty.trim() || undefined,
+      photoUrl: editPhotoUrl.trim() || undefined,
+      productUrl: editProductUrl.trim() || undefined,
+      description: editDescription.trim() || undefined,
+      unit:
+        parsedYield !== ''
+          ? 'caja'
+          : editPiecesPerBox.trim() === '1'
+          ? 'pieza'
+          : editingItem.unit || 'unidad',
+    };
+
+    const nextCatalog = catalog.map((c) => (c.id === editingItem.id ? updatedItem : c));
+    onUpdateCatalog(nextCatalog, [updatedItem]);
+
+    if (detailItem && detailItem.id === editingItem.id) {
+      setDetailItem(updatedItem);
+    }
+
+    setEditingItem(null);
+    onShowToast(`Producto "${updatedItem.name}" actualizado en Supabase y en el catálogo.`, 'success');
   };
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,7 +309,10 @@ export const TabCatalog: React.FC<TabCatalogProps> = ({
   };
 
   const handleRemoveProduct = (id: string) => {
-    onUpdateCatalog(catalog.filter((item) => item.id !== id));
+    onUpdateCatalog(
+      catalog.filter((item) => item.id !== id),
+      []
+    );
     onShowToast(`Producto ${id} eliminado.`, 'info');
   };
 
@@ -453,6 +563,57 @@ export const TabCatalog: React.FC<TabCatalogProps> = ({
                   />
                 </div>
               </div>
+
+              <div className="lg:col-span-2">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Foto (URL)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={newPhotoUrl}
+                    onChange={(e) => setNewPhotoUrl(e.target.value)}
+                    placeholder="https://teknospazio.com/wp-content/uploads/..."
+                    className="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg"
+                  />
+                  {newPhotoUrl.trim() && (
+                    <img
+                      src={newPhotoUrl.trim()}
+                      alt="Vista previa"
+                      className="w-9 h-9 rounded-lg object-cover border border-slate-200 bg-white shrink-0"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  URL Producto Web
+                </label>
+                <input
+                  type="url"
+                  value={newProductUrl}
+                  onChange={(e) => setNewProductUrl(e.target.value)}
+                  placeholder="https://teknospazio.com/product/..."
+                  className="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg"
+                />
+              </div>
+
+              <div className="sm:col-span-2 lg:col-span-4">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Descripción (aparece en el Presupuesto PDF si es el primer material del área)
+                </label>
+                <textarea
+                  rows={3}
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  placeholder="Ej. Revestimiento decorativo de PVC tipo mármol ideal para interiores..."
+                  className="w-full text-xs p-2.5 bg-white border border-slate-200 rounded-lg resize-y"
+                />
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
@@ -637,6 +798,14 @@ export const TabCatalog: React.FC<TabCatalogProps> = ({
                           </button>
                           <button
                             type="button"
+                            onClick={() => handleStartEdit(item)}
+                            className="p-1.5 text-slate-500 hover:text-indigo-700 hover:bg-indigo-50 rounded-lg transition"
+                            title="Editar producto"
+                          >
+                            <i className="fa-solid fa-pen-to-square"></i>
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleRemoveProduct(item.id)}
                             className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
                             title="Eliminar producto"
@@ -783,9 +952,292 @@ export const TabCatalog: React.FC<TabCatalogProps> = ({
 
             {detailItem.productUrl && (
               <div className="text-[11px] text-slate-500 break-all">
-                <span className="font-bold">URL Web:</span> {detailItem.productUrl}
+                <span className="font-bold">URL Web:</span>{' '}
+                <a
+                  href={detailItem.productUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-teal-700 underline hover:text-teal-900"
+                >
+                  {detailItem.productUrl}
+                </a>
               </div>
             )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  const target = detailItem;
+                  setDetailItem(null);
+                  handleStartEdit(target);
+                }}
+                className="px-4 py-2 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition flex items-center gap-1.5"
+              >
+                <i className="fa-solid fa-pen-to-square"></i> Editar Producto
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailItem(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Product Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl my-auto max-h-[92vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                  <i className="fa-solid fa-pen-to-square text-indigo-600"></i> Editar Producto del Catálogo
+                </h3>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Los cambios se guardan directamente en el catálogo y en Supabase.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingItem(null)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-800 hover:bg-slate-100 text-lg font-bold transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEdit} className="flex flex-col flex-1 overflow-hidden pt-4">
+              <div className="overflow-y-auto custom-scroll pr-1 flex-1 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      SKU *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editSku}
+                      onChange={(e) => setEditSku(e.target.value)}
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg font-mono font-bold"
+                    />
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Nombre del Producto *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Categoría y Subcategorías
+                    </label>
+                    <input
+                      type="text"
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value)}
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Precio Regular (MXN)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editRegularPrice}
+                      onChange={(e) =>
+                        setEditRegularPrice(
+                          e.target.value === '' ? '' : parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Precio Descuento (MXN) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={editDiscountPrice}
+                      onChange={(e) =>
+                        setEditDiscountPrice(
+                          e.target.value === '' ? '' : parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full text-xs p-2.5 bg-white border border-teal-300 rounded-lg font-bold text-teal-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      M²/Caja (Rendimiento)
+                    </label>
+                    <input
+                      type="text"
+                      value={editYield}
+                      onChange={(e) => setEditYield(e.target.value)}
+                      placeholder="Ej. 2.256"
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Pz/Caja
+                    </label>
+                    <input
+                      type="text"
+                      value={editPiecesPerBox}
+                      onChange={(e) => setEditPiecesPerBox(e.target.value)}
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Largo
+                    </label>
+                    <input
+                      type="text"
+                      value={editLength}
+                      onChange={(e) => setEditLength(e.target.value)}
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Ancho
+                    </label>
+                    <input
+                      type="text"
+                      value={editWidth}
+                      onChange={(e) => setEditWidth(e.target.value)}
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Espesor
+                    </label>
+                    <input
+                      type="text"
+                      value={editThickness}
+                      onChange={(e) => setEditThickness(e.target.value)}
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Garantía / Kg/Caja
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={editWarranty}
+                        onChange={(e) => setEditWarranty(e.target.value)}
+                        placeholder="Garantía"
+                        className="w-1/2 text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                      />
+                      <input
+                        type="text"
+                        value={editWeightKg}
+                        onChange={(e) => setEditWeightKg(e.target.value)}
+                        placeholder="Kg/Caja"
+                        className="w-1/2 text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Foto (URL)
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="url"
+                        value={editPhotoUrl}
+                        onChange={(e) => setEditPhotoUrl(e.target.value)}
+                        placeholder="https://teknospazio.com/wp-content/uploads/..."
+                        className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                      />
+                      {editPhotoUrl.trim() && (
+                        <img
+                          src={editPhotoUrl.trim()}
+                          alt="Vista previa"
+                          className="w-9 h-9 rounded-lg object-cover border border-slate-200 bg-white shrink-0"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      URL Producto Web
+                    </label>
+                    <input
+                      type="url"
+                      value={editProductUrl}
+                      onChange={(e) => setEditProductUrl(e.target.value)}
+                      placeholder="https://teknospazio.com/product/..."
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2 lg:col-span-4">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Descripción
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      placeholder="Descripción del producto..."
+                      className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-lg resize-y"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-100 shrink-0 mt-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingItem(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 text-xs font-bold text-white bg-teal-700 hover:bg-teal-800 rounded-xl shadow-xs transition"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

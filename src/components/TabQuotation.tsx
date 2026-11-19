@@ -26,7 +26,11 @@ interface TabQuotationProps {
   ) => void;
   onAddRoomPhoto: (roomId: string, files: FileList) => void;
   onRemoveRoomPhoto: (roomId: string, photoId: string) => void;
-  onSetBudgetPhoto: (roomId: string, slot: 'actual' | 'proposal', file: File) => void;
+  onSetBudgetPhoto: (
+    roomId: string,
+    slot: 'actual' | 'proposal',
+    source: File | { name: string; url: string }
+  ) => void;
   onRemoveBudgetPhoto: (roomId: string, slot: 'actual' | 'proposal') => void;
   onOpenPhotoViewer: (photoUrl: string, title: string) => void;
   onGoToPresupuesto: () => void;
@@ -405,181 +409,228 @@ export const TabQuotation: React.FC<TabQuotationProps> = ({
 
               {activeCalc.materialsCalc.map((m) => {
                 const skuMatched = !isTechnician && Boolean(findCatalogBySku(m.sku));
+                const isDetailedInBudget = m.showInBudget !== false;
                 return (
                 <div
                   key={m.id}
-                  className={`grid grid-cols-1 sm:grid-cols-2 ${
-                    isTechnician
-                      ? 'lg:grid-cols-4'
-                      : 'lg:grid-cols-[1.2fr_2fr_1fr_1fr_1fr_1fr_1fr_auto]'
-                  } gap-3 items-end p-3.5 rounded-xl border transition ${
+                  className={`p-3.5 rounded-xl border transition space-y-2.5 ${
                     isTechnician
                       ? 'bg-slate-100/70 border-slate-200'
-                      : 'bg-slate-50/70 border-slate-200 hover:border-slate-300'
+                      : isDetailedInBudget
+                      ? 'bg-slate-50/70 border-slate-200 hover:border-slate-300'
+                      : 'bg-amber-50/50 border-amber-200 hover:border-amber-300'
                   }`}
                 >
-                  <div>
-                    <label className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-1 uppercase">
-                      <span>SKU</span>
-                      {skuMatched && (
-                        <span className="text-[9px] font-bold text-emerald-700 normal-case">
-                          ✓ Catálogo
-                        </span>
-                      )}
-                    </label>
-                    <input
-                      type="text"
-                      disabled={isTechnician}
-                      list={!isTechnician ? `catalog-sku-options-${activeRoom.id}` : undefined}
-                      value={m.sku}
-                      onChange={(e) => handleSkuInputChange(m.id, e.target.value)}
-                      placeholder="Escribe SKU..."
-                      className={`w-full text-xs p-2 border rounded-lg font-mono font-bold ${
-                        isTechnician
-                          ? 'bg-slate-200/60 border-slate-200 text-slate-600 cursor-not-allowed'
-                          : skuMatched
-                          ? 'bg-emerald-50/40 border-emerald-400 text-teal-900'
-                          : 'bg-white border-slate-200 text-slate-700'
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">
-                      Nombre del Material
-                    </label>
-                    <input
-                      type="text"
-                      disabled={isTechnician}
-                      value={m.name}
-                      onChange={(e) =>
-                        onUpdateMaterialField(activeRoom.id, m.id, 'name', e.target.value)
-                      }
-                      placeholder="Descripción del material o servicio"
-                      className={`w-full text-xs p-2 border rounded-lg font-medium ${
-                        isTechnician
-                          ? 'bg-slate-200/60 border-slate-200 text-slate-600 cursor-not-allowed'
-                          : 'bg-white border-slate-200 text-slate-800'
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">
-                      No. Piezas (manual)
-                    </label>
-                    <input
-                      type="number"
-                      disabled={isTechnician}
-                      step="0.01"
-                      min="0"
-                      value={m.pieces}
-                      onChange={(e) =>
-                        onUpdateMaterialField(
-                          activeRoom.id,
-                          m.id,
-                          'pieces',
-                          e.target.value === '' ? '' : parseFloat(e.target.value) || 0
-                        )
-                      }
-                      placeholder="Ej. 12 pcs"
-                      className={`w-full text-xs p-2 border rounded-lg ${
-                        isTechnician
-                          ? 'bg-slate-200/60 border-slate-200 text-slate-600 cursor-not-allowed'
-                          : 'bg-white border-slate-200'
-                      }`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">
-                      Rendimiento (m²/unid)
-                    </label>
-                    <input
-                      type="number"
-                      disabled={isTechnician}
-                      step="0.01"
-                      min="0"
-                      value={m.yield}
-                      onChange={(e) =>
-                        onUpdateMaterialField(
-                          activeRoom.id,
-                          m.id,
-                          'yield',
-                          e.target.value === '' ? '' : parseFloat(e.target.value) || 0
-                        )
-                      }
-                      placeholder="Ej. 1 m²"
-                      className={`w-full text-xs p-2 border rounded-lg ${
-                        isTechnician
-                          ? 'bg-slate-200/60 border-slate-200 text-slate-600 cursor-not-allowed'
-                          : 'bg-white border-slate-200'
-                      }`}
-                    />
-                  </div>
-
-                  {!isTechnician && (
-                    <>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">
-                          Precio Unit (MXN)
+                  <div
+                    className={`grid grid-cols-1 sm:grid-cols-2 ${
+                      isTechnician
+                        ? 'lg:grid-cols-4'
+                        : 'lg:grid-cols-[auto_1.15fr_1.9fr_0.9fr_0.9fr_0.95fr_0.85fr_0.9fr_auto]'
+                    } gap-3 items-end`}
+                  >
+                    {!isTechnician && (
+                      <div className="flex sm:flex-col items-center justify-between sm:justify-end gap-2 pb-1">
+                        <label
+                          htmlFor={`show-budget-${m.id}`}
+                          title="Si está marcado, se detalla en el Presupuesto. Si lo desmarcas, se agrupa en 'Materiales Extras'."
+                          className="flex flex-col items-center gap-1 cursor-pointer select-none"
+                        >
+                          <span className="text-[10px] font-bold text-slate-500 uppercase whitespace-nowrap">
+                            Detallar
+                          </span>
+                          <input
+                            id={`show-budget-${m.id}`}
+                            type="checkbox"
+                            checked={isDetailedInBudget}
+                            onChange={(e) =>
+                              onUpdateMaterialField(
+                                activeRoom.id,
+                                m.id,
+                                'showInBudget',
+                                e.target.checked
+                              )
+                            }
+                            className="w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer accent-teal-600"
+                          />
                         </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={m.price}
-                          onChange={(e) =>
-                            onUpdateMaterialField(
-                              activeRoom.id,
-                              m.id,
-                              'price',
-                              e.target.value === '' ? '' : parseFloat(e.target.value) || 0
-                            )
-                          }
-                          placeholder="0.00"
-                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg font-bold text-teal-800"
-                        />
                       </div>
+                    )}
 
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">
-                          Descuento (%)
-                        </label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          value={m.discountPct}
-                          onChange={(e) =>
-                            onUpdateMaterialField(
-                              activeRoom.id,
-                              m.id,
-                              'discountPct',
-                              parseFloat(e.target.value) || 0
-                            )
-                          }
-                          className="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg text-emerald-700 font-bold"
-                        />
-                      </div>
+                    <div>
+                      <label className="flex items-center justify-between text-[10px] font-bold text-slate-500 mb-1 uppercase">
+                        <span>SKU</span>
+                        {skuMatched && (
+                          <span className="text-[9px] font-bold text-emerald-700 normal-case">
+                            ✓ Catálogo
+                          </span>
+                        )}
+                      </label>
+                      <input
+                        type="text"
+                        disabled={isTechnician}
+                        list={!isTechnician ? `catalog-sku-options-${activeRoom.id}` : undefined}
+                        value={m.sku}
+                        onChange={(e) => handleSkuInputChange(m.id, e.target.value)}
+                        placeholder="Escribe SKU..."
+                        className={`w-full text-xs p-2 border rounded-lg font-mono font-bold ${
+                          isTechnician
+                            ? 'bg-slate-200/60 border-slate-200 text-slate-600 cursor-not-allowed'
+                            : skuMatched
+                            ? 'bg-emerald-50/40 border-emerald-400 text-teal-900'
+                            : 'bg-white border-slate-200 text-slate-700'
+                        }`}
+                      />
+                    </div>
 
-                      <div className="flex flex-col justify-end">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase">Importe</span>
-                        <span className="text-xs font-extrabold text-slate-900">
-                          ${formatMXN(m.netTotal)}
-                        </span>
-                      </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">
+                        Nombre del Material
+                      </label>
+                      <input
+                        type="text"
+                        disabled={isTechnician}
+                        value={m.name}
+                        onChange={(e) =>
+                          onUpdateMaterialField(activeRoom.id, m.id, 'name', e.target.value)
+                        }
+                        placeholder="Descripción del material o servicio"
+                        className={`w-full text-xs p-2 border rounded-lg font-medium ${
+                          isTechnician
+                            ? 'bg-slate-200/60 border-slate-200 text-slate-600 cursor-not-allowed'
+                            : 'bg-white border-slate-200 text-slate-800'
+                        }`}
+                      />
+                    </div>
 
-                      <button
-                        type="button"
-                        onClick={() => onRemoveMaterial(activeRoom.id, m.id)}
-                        className="p-2 text-slate-400 hover:text-red-500 transition rounded-lg hover:bg-red-50"
-                        title="Eliminar material"
-                      >
-                        <i className="fa-solid fa-trash-can"></i>
-                      </button>
-                    </>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">
+                        No. Piezas (manual)
+                      </label>
+                      <input
+                        type="number"
+                        disabled={isTechnician}
+                        step="0.01"
+                        min="0"
+                        value={m.pieces}
+                        onChange={(e) =>
+                          onUpdateMaterialField(
+                            activeRoom.id,
+                            m.id,
+                            'pieces',
+                            e.target.value === '' ? '' : parseFloat(e.target.value) || 0
+                          )
+                        }
+                        placeholder="Ej. 12 pcs"
+                        className={`w-full text-xs p-2 border rounded-lg ${
+                          isTechnician
+                            ? 'bg-slate-200/60 border-slate-200 text-slate-600 cursor-not-allowed'
+                            : 'bg-white border-slate-200'
+                        }`}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">
+                        Rendimiento (m²/unid)
+                      </label>
+                      <input
+                        type="number"
+                        disabled={isTechnician}
+                        step="0.01"
+                        min="0"
+                        value={m.yield}
+                        onChange={(e) =>
+                          onUpdateMaterialField(
+                            activeRoom.id,
+                            m.id,
+                            'yield',
+                            e.target.value === '' ? '' : parseFloat(e.target.value) || 0
+                          )
+                        }
+                        placeholder="Ej. 1 m²"
+                        className={`w-full text-xs p-2 border rounded-lg ${
+                          isTechnician
+                            ? 'bg-slate-200/60 border-slate-200 text-slate-600 cursor-not-allowed'
+                            : 'bg-white border-slate-200'
+                        }`}
+                      />
+                    </div>
+
+                    {!isTechnician && (
+                      <>
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">
+                            Precio Unit (MXN)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            value={m.price}
+                            onChange={(e) =>
+                              onUpdateMaterialField(
+                                activeRoom.id,
+                                m.id,
+                                'price',
+                                e.target.value === '' ? '' : parseFloat(e.target.value) || 0
+                              )
+                            }
+                            placeholder="0.00"
+                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg font-bold text-teal-800"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase">
+                            Descuento (%)
+                          </label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            value={m.discountPct}
+                            onChange={(e) =>
+                              onUpdateMaterialField(
+                                activeRoom.id,
+                                m.id,
+                                'discountPct',
+                                parseFloat(e.target.value) || 0
+                              )
+                            }
+                            className="w-full text-xs p-2 bg-white border border-slate-200 rounded-lg text-emerald-700 font-bold"
+                          />
+                        </div>
+
+                        <div className="flex flex-col justify-end">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase">
+                            Importe
+                          </span>
+                          <span className="text-xs font-extrabold text-slate-900">
+                            ${formatMXN(m.netTotal)}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => onRemoveMaterial(activeRoom.id, m.id)}
+                          className="p-2 text-slate-400 hover:text-red-500 transition rounded-lg hover:bg-red-50"
+                          title="Eliminar material"
+                        >
+                          <i className="fa-solid fa-trash-can"></i>
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  {!isTechnician && !isDetailedInBudget && (
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-amber-800 bg-amber-100/70 px-2.5 py-1 rounded-lg border border-amber-200">
+                      <i className="fa-solid fa-layer-group text-amber-600"></i>
+                      <span>
+                        Este material NO se mostrará por separado en el Presupuesto: se sumará bajo{' '}
+                        <strong>&quot;Materiales Extras&quot;</strong>.
+                      </span>
+                    </div>
                   )}
                 </div>
                 );
@@ -625,6 +676,14 @@ export const TabQuotation: React.FC<TabQuotationProps> = ({
                     onClick={() => onOpenPhotoViewer(p.url, p.name)}
                     className="h-24 w-28 rounded-xl object-cover border border-slate-200 cursor-pointer group-hover:opacity-90 transition shadow-2xs"
                   />
+                  <a
+                    href={p.url}
+                    download={p.name || 'levantamiento.jpg'}
+                    title="Descargar foto para retocar"
+                    className="absolute left-1 bottom-1 rounded-full bg-slate-900/80 text-white w-6 h-6 flex items-center justify-center text-[10px] hover:bg-teal-600 transition"
+                  >
+                    <i className="fa-solid fa-download"></i>
+                  </a>
                   <button
                     onClick={() => onRemoveRoomPhoto(activeRoom.id, p.id)}
                     className="absolute right-1 top-1 rounded-full bg-slate-900/80 text-white w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition"
@@ -656,6 +715,178 @@ export const TabQuotation: React.FC<TabQuotationProps> = ({
             className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
           />
         </div>
+
+        {/* Visual Comparison Photos: Before & After for Budget */}
+        {(() => {
+          const actualPhoto = activeRoom.budgetPhotos?.actual || null;
+          const proposalPhoto = activeRoom.budgetPhotos?.proposal || null;
+          const bothLoaded = Boolean(actualPhoto?.url && proposalPhoto?.url);
+          const oneLoaded = Boolean(actualPhoto?.url || proposalPhoto?.url) && !bothLoaded;
+
+          return (
+            <div className="space-y-3 border-t border-slate-200 pt-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                    <i className="fa-solid fa-images text-teal-600"></i> Fotos de Comparativa Visual
+                    (Antes y Después)
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Carga la foto del estado actual (Antes) y el retoque con el material elegido
+                    (Después) para mostrarlas en el Presupuesto.
+                  </p>
+                </div>
+
+                {bothLoaded ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <i className="fa-solid fa-circle-check"></i> Listas para el Presupuesto
+                  </span>
+                ) : oneLoaded ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                    <i className="fa-solid fa-triangle-exclamation"></i> Falta cargar la segunda foto
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 text-slate-600">
+                    Opcional (se muestra solo si subes ambas)
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Slot: ANTES */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-slate-500"></span> Foto &quot;Antes&quot;
+                      (Actual)
+                    </span>
+                    {actualPhoto && (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveBudgetPhoto(activeRoom.id, 'actual')}
+                        className="text-[11px] font-semibold text-red-600 hover:text-red-800"
+                      >
+                        <i className="fa-solid fa-trash-can mr-1"></i>Quitar
+                      </button>
+                    )}
+                  </div>
+
+                  {actualPhoto?.url ? (
+                    <div className="relative group">
+                      <img
+                        src={actualPhoto.url}
+                        alt={actualPhoto.name || 'Foto Antes'}
+                        onClick={() =>
+                          onOpenPhotoViewer(actualPhoto.url, `Antes — ${activeRoom.name || 'Área'}`)
+                        }
+                        className="w-full h-44 object-cover rounded-lg border border-slate-200 bg-white cursor-pointer hover:opacity-95 transition"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-36 rounded-lg border border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-center p-3 text-slate-400">
+                      <i className="fa-regular fa-image text-2xl mb-1.5"></i>
+                      <span className="text-[11px]">Sin foto &quot;Antes&quot; cargada</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="cursor-pointer flex-1 text-center px-3 py-2 rounded-lg bg-white hover:bg-teal-50 text-teal-800 border border-slate-200 hover:border-teal-300 text-xs font-bold transition">
+                      <i className="fa-solid fa-upload mr-1.5"></i>
+                      {actualPhoto ? 'Cambiar Foto Antes' : 'Subir Foto Antes'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) onSetBudgetPhoto(activeRoom.id, 'actual', file);
+                          e.target.value = '';
+                        }}
+                      />
+                    </label>
+                    {activeRoom.photos && activeRoom.photos.length > 0 && (
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          const picked = activeRoom.photos?.find((p) => p.id === e.target.value);
+                          if (picked) {
+                            onSetBudgetPhoto(activeRoom.id, 'actual', {
+                              name: picked.name,
+                              url: picked.url,
+                            });
+                          }
+                        }}
+                        className="text-[11px] p-2 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium max-w-full"
+                      >
+                        <option value="">O elegir de Levantamiento...</option>
+                        {activeRoom.photos.map((p, i) => (
+                          <option key={p.id} value={p.id}>
+                            Foto #{i + 1}: {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
+
+                {/* Slot: DESPUÉS */}
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-teal-900 uppercase tracking-wide flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-teal-600"></span> Foto
+                      &quot;Después&quot; (Propuesta)
+                    </span>
+                    {proposalPhoto && (
+                      <button
+                        type="button"
+                        onClick={() => onRemoveBudgetPhoto(activeRoom.id, 'proposal')}
+                        className="text-[11px] font-semibold text-red-600 hover:text-red-800"
+                      >
+                        <i className="fa-solid fa-trash-can mr-1"></i>Quitar
+                      </button>
+                    )}
+                  </div>
+
+                  {proposalPhoto?.url ? (
+                    <div className="relative group">
+                      <img
+                        src={proposalPhoto.url}
+                        alt={proposalPhoto.name || 'Foto Después'}
+                        onClick={() =>
+                          onOpenPhotoViewer(
+                            proposalPhoto.url,
+                            `Después — ${activeRoom.name || 'Área'}`
+                          )
+                        }
+                        className="w-full h-44 object-cover rounded-lg border border-slate-200 bg-white cursor-pointer hover:opacity-95 transition"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-36 rounded-lg border border-dashed border-slate-300 bg-white flex flex-col items-center justify-center text-center p-3 text-slate-400">
+                      <i className="fa-solid fa-wand-magic-sparkles text-2xl mb-1.5"></i>
+                      <span className="text-[11px]">Sin foto &quot;Después&quot; cargada</span>
+                    </div>
+                  )}
+
+                  <label className="cursor-pointer block w-full text-center px-3 py-2 rounded-lg bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold transition shadow-2xs">
+                    <i className="fa-solid fa-upload mr-1.5"></i>
+                    {proposalPhoto ? 'Cambiar Foto Después' : 'Subir Foto Después'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) onSetBudgetPhoto(activeRoom.id, 'proposal', file);
+                        e.target.value = '';
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Work Planning */}
         <div className="space-y-3 border-t border-slate-200 pt-5">

@@ -72,9 +72,12 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
       };
     });
 
+    const detailedMaterials = materialsCalc.filter((m) => m.showInBudget !== false);
+    const extraMaterials = materialsCalc.filter((m) => m.showInBudget === false);
+    const extrasTotal = extraMaterials.reduce((sum, item) => sum + item.netTotal, 0);
     const roomSubtotal = materialsCalc.reduce((sum, item) => sum + item.netTotal, 0);
 
-    const firstMaterial = room.materials[0];
+    const firstMaterial = detailedMaterials[0];
     const matchedCatalog = findCatalogForMaterial(firstMaterial);
     const firstMaterialDescription = (
       firstMaterial?.description ||
@@ -98,6 +101,10 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
           : `https://${rawProductUrl}`
         : '';
 
+    const actualPhoto = room.budgetPhotos?.actual?.url ? room.budgetPhotos.actual : null;
+    const proposalPhoto = room.budgetPhotos?.proposal?.url ? room.budgetPhotos.proposal : null;
+    const hasBothComparisonPhotos = Boolean(actualPhoto && proposalPhoto);
+
     return {
       room,
       idx,
@@ -107,12 +114,18 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
       areaNet,
       areaGross,
       materialsCalc,
+      detailedMaterials,
+      extraMaterials,
+      extrasTotal,
       roomSubtotal,
       firstMaterialName: firstMaterial?.name || matchedCatalog?.name || '',
       firstMaterialSku: firstMaterial?.sku || matchedCatalog?.sku || '',
       firstMaterialDescription,
       firstMaterialPhotoUrl,
       firstMaterialProductUrl,
+      actualPhoto,
+      proposalPhoto,
+      hasBothComparisonPhotos,
     };
   });
 
@@ -120,6 +133,7 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
   const areasWithDescription = roomsCalculated.filter((r) =>
     Boolean(r.firstMaterialDescription || r.firstMaterialPhotoUrl || r.firstMaterialProductUrl)
   );
+  const roomsWithComparison = roomsCalculated.filter((r) => r.hasBothComparisonPhotos);
 
   const handlePrint = () => {
     window.print();
@@ -136,11 +150,14 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
 
     text += `*DESGLOSE POR ÁREAS:*\n`;
 
-    roomsCalculated.forEach(({ room, idx, l, w, waste, areaNet, areaGross, materialsCalc, roomSubtotal }) => {
+    roomsCalculated.forEach(({ room, idx, l, w, waste, areaNet, areaGross, detailedMaterials, extraMaterials, extrasTotal, roomSubtotal }) => {
       text += `\n#${idx + 1}. *${room.name || `Área ${idx + 1}`}* (${formatAreaNum(l)} x ${formatAreaNum(w)} = ${formatAreaNum(areaNet)} m² útiles + ${formatAreaNum(waste)}% merma = ${formatAreaNum(areaGross)} m²)\n`;
-      materialsCalc.forEach((m) => {
+      detailedMaterials.forEach((m) => {
         text += `   • ${m.name || 'Material'}: ${m.qty} unid x $${formatMXN(typeof m.price === 'number' ? m.price : 0)} = $${formatMXN(m.netTotal)}\n`;
       });
+      if (extraMaterials.length > 0) {
+        text += `   • Materiales Extras = $${formatMXN(extrasTotal)}\n`;
+      }
       text += `   Subtotal Área: $${formatMXN(roomSubtotal)} MXN\n`;
     });
 
@@ -274,7 +291,21 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
 
         {/* Breakdown tables per room */}
         <div className="space-y-6">
-          {roomsCalculated.map(({ room, idx, l, w, waste, areaNet, areaGross, materialsCalc, roomSubtotal }) => (
+          {roomsCalculated.map(
+            ({
+              room,
+              idx,
+              l,
+              w,
+              waste,
+              areaNet,
+              areaGross,
+              materialsCalc,
+              detailedMaterials,
+              extraMaterials,
+              extrasTotal,
+              roomSubtotal,
+            }) => (
             <div key={room.id} className="space-y-2.5 print-avoid-break">
               <div className="flex flex-wrap justify-between items-center gap-2 bg-slate-900 text-white print:bg-slate-100 print:text-slate-900 print:border print:border-slate-300 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm print:text-[14px] font-bold">
                 <span>
@@ -297,7 +328,7 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-slate-700">
-                    {materialsCalc.map((m) => (
+                    {detailedMaterials.map((m) => (
                       <tr key={m.id}>
                         <td className="py-2.5 pl-1 pr-2">
                           <span className="font-semibold text-slate-900">{m.name || 'Material'}</span>
@@ -319,6 +350,19 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
                         </td>
                       </tr>
                     ))}
+                    {extraMaterials.length > 0 && (
+                      <tr>
+                        <td className="py-2.5 pl-1 pr-2">
+                          <span className="font-semibold text-slate-900">Materiales Extras</span>
+                        </td>
+                        <td className="py-2.5 text-center font-semibold text-slate-500">-</td>
+                        <td className="py-2.5 text-right text-slate-500">-</td>
+                        <td className="py-2.5 text-center text-slate-500">-</td>
+                        <td className="py-2.5 text-right font-bold text-slate-900 pr-1 whitespace-nowrap">
+                          ${formatMXN(extrasTotal)}
+                        </td>
+                      </tr>
+                    )}
                     {materialsCalc.length === 0 && (
                       <tr>
                         <td colSpan={5} className="py-3 text-center text-slate-400">
@@ -371,8 +415,9 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
                   </div>
                 );
               })()}
-            </div>
-          ))}
+              </div>
+            )
+          )}
         </div>
 
         {/* Totals Section */}
@@ -457,6 +502,55 @@ export const TabBudget: React.FC<TabBudgetProps> = ({ quote, catalog = [], onSho
                   </div>
                 )
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Before & After Visual Comparison (only shown when BOTH photos are uploaded for an area) */}
+        {roomsWithComparison.length > 0 && (
+          <div className="space-y-4 border-t border-slate-200 pt-5">
+            <h3 className="text-xs sm:text-sm print:text-[13.5px] font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5 break-after-avoid">
+              <i className="fa-solid fa-images text-teal-600"></i> Propuesta Visual: Antes y Después
+            </h3>
+            <div className="space-y-4">
+              {roomsWithComparison.map(({ room, idx, actualPhoto, proposalPhoto }) => (
+                <div
+                  key={`comp-${room.id}`}
+                  className="rounded-xl border border-slate-200 bg-slate-50/70 p-3.5 sm:p-4 space-y-3 print-avoid-break"
+                >
+                  <div className="text-xs sm:text-sm print:text-[14px] font-bold text-slate-900">
+                    <span className="text-teal-700">
+                      #{idx + 1}. {room.name?.trim() || `Área ${idx + 1}`}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 print:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-[11px] print:text-[12px] font-bold uppercase tracking-wider text-slate-600">
+                        <span className="inline-block w-2 h-2 rounded-full bg-slate-500"></span>
+                        Antes (Estado Actual)
+                      </div>
+                      <img
+                        src={actualPhoto!.url}
+                        alt={`Antes - ${room.name?.trim() || `Área ${idx + 1}`}`}
+                        className="w-full h-52 sm:h-56 print:h-48 object-cover rounded-lg border border-slate-200 bg-white shadow-2xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-1.5 text-[11px] print:text-[12px] font-bold uppercase tracking-wider text-teal-800">
+                        <span className="inline-block w-2 h-2 rounded-full bg-teal-600"></span>
+                        Después (Propuesta con Material Elegido)
+                      </div>
+                      <img
+                        src={proposalPhoto!.url}
+                        alt={`Después - ${room.name?.trim() || `Área ${idx + 1}`}`}
+                        className="w-full h-52 sm:h-56 print:h-48 object-cover rounded-lg border border-teal-200 bg-white shadow-2xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
